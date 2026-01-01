@@ -1,7 +1,9 @@
+#include "SLinkDecode.h"
 #include "SLinkRx.h"
 
 const uint8_t SIG_PIN = 21;
 SLinkRx slink(SIG_PIN);
+SLinkTranslator translator;
 
 void setup() {
   Serial.begin(230400);
@@ -10,14 +12,12 @@ void setup() {
 
 void loop() {
   if (slink.poll(5000)) {   // message gap in us
-    if (!slink.error() && slink.length()) {
-      const uint8_t* p = slink.data();
-      for (uint16_t i = 0; i < slink.length(); i++) {
-        if (p[i] < 16) Serial.print('0');
-        Serial.print(p[i], HEX);
-        Serial.print(' ');
-      }
-      Serial.println();
+    if (slink.error()) {
+      Serial.println("frame error");
+      return;
+    }
+    if (slink.length()) {
+      translator.printMessage(slink.data(), slink.length(), Serial);
     }
   }
 }
