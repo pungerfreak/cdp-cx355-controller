@@ -19,6 +19,29 @@ const SLinkPattern kPatterns[] = {
 };
 
 constexpr uint16_t kPatternCount = sizeof(kPatterns) / sizeof(kPatterns[0]);
+
+bool isDiscCommand(uint8_t cmd) {
+  return (cmd == 0x52 || cmd == 0x54 || cmd == 0x58);
+}
+
+bool decodeDiscNumber(uint8_t raw, uint8_t unit, uint16_t& disc) {
+  disc = 0;
+  if (unit == 0x98) {
+    if (raw >= 0x37 && raw <= 0xFE) {
+      disc = (uint16_t)raw - 0x36;
+      return true;
+    }
+    return false;
+  }
+  if (unit == 0x9B) {
+    if (raw >= 0x01 && raw <= 0x64) {
+      disc = (uint16_t)raw + 200;
+      return true;
+    }
+    return false;
+  }
+  return false;
+}
 }  // namespace
 
 const SLinkPattern* SLinkTranslator::matchPattern(const uint8_t* data, uint16_t len) const {
@@ -138,6 +161,18 @@ void SLinkTranslator::printMessage(const uint8_t* data, uint16_t len, Stream& ou
   if (len >= 2) {
     out.print(" b1=0x");
     printHexByte(data[1], out);
+  }
+  if (len >= 3 && isDiscCommand(data[1])) {
+    const uint8_t rawDisc = data[2];
+    out.print(" disc_raw=0x");
+    printHexByte(rawDisc, out);
+    uint16_t disc = 0;
+    if (decodeDiscNumber(rawDisc, data[0], disc)) {
+      out.print(" disc=");
+      out.print(disc);
+    } else {
+      out.print(" disc=?");
+    }
   }
   if (len > 2) {
     out.print(" data=");
