@@ -1,5 +1,7 @@
 #include "SLinkDecode.h"
 
+const char kSLinkUnknownName[] = "UNKNOWN";
+
 namespace {
 const SLinkPattern kPatterns[] = {
   {"PLAY",          "cmd", 2, 0, 2, {0x00, 0x00}, {0x00, 0xFF}},
@@ -79,144 +81,62 @@ const SLinkPattern* SLinkTranslator::matchPattern(const uint8_t* data, uint16_t 
   return nullptr;
 }
 
-void SLinkTranslator::printHexByte(uint8_t b, Stream& out) const {
-  if (b < 16) out.print('0');
-  out.print(b, HEX);
-}
+bool SLinkTranslator::decode(const uint8_t* data, uint16_t len, SLinkMessage& out) const {
+  if (!data || !len) return false;
+  if (data[0] >= 0x90 && data[0] <= 0x92) return false;
 
-void SLinkTranslator::printHex(const uint8_t* data, uint16_t len, Stream& out) const {
-  for (uint16_t i = 0; i < len; i++) {
-    printHexByte(data[i], out);
-    if (i + 1 < len) out.print(' ');
-  }
-}
+  memset(&out, 0, sizeof(out));
+  const uint16_t copyLen = (len > SLinkMessage::RAW_MAX) ? SLinkMessage::RAW_MAX : len;
+  memcpy(out.raw, data, copyLen);
+  out.len = copyLen;
+  out.truncated = (len > copyLen);
+  out.unit = out.raw[0];
+  if (out.len >= 2) out.cmd = out.raw[1];
 
-void SLinkTranslator::printAscii(const uint8_t* data, uint16_t len, Stream& out) const {
-  bool any = false;
-  for (uint16_t i = 0; i < len; i++) {
-    if (data[i] >= 32 && data[i] <= 126) {
-      any = true;
-      break;
-    }
-  }
-  if (!any) return;
+  const SLinkPattern* pat = matchPattern(out.raw, out.len);
+  out.name = pat ? pat->name : kSLinkUnknownName;
+  out.note = (pat && pat->note && pat->note[0]) ? pat->note : nullptr;
 
-  out.print(" ascii=\"");
-  for (uint16_t i = 0; i < len; i++) {
-    const uint8_t b = data[i];
-    out.write((b >= 32 && b <= 126) ? (char)b : '.');
-  }
-  out.print('"');
-}
-
-void SLinkTranslator::printChecksumHints(const uint8_t* data, uint16_t len, Stream& out) const {
-  if (len < 2) return;
-
-  uint8_t sum = 0;
-  uint8_t xr = 0;
-  for (uint16_t i = 0; i + 1 < len; i++) {
-    sum = (uint8_t)(sum + data[i]);
-    xr ^= data[i];
-  }
-
-  const uint8_t last = data[len - 1];
-  const bool sumMatch = (last == sum);
-  const bool sumInvMatch = (last == (uint8_t)~sum);
-  const bool xorMatch = (last == xr);
-  const bool xorInvMatch = (last == (uint8_t)~xr);
-
-  out.print(" chk_last=0x");
-  printHexByte(last, out);
-  out.print(" sum=0x");
-  printHexByte(sum, out);
-  out.print(" xor=0x");
-  printHexByte(xr, out);
-
-  if (sumMatch || sumInvMatch || xorMatch || xorInvMatch) {
-    out.print(" chk=");
-    bool first = true;
-    if (sumMatch) {
-      out.print("sum");
-      first = false;
-    }
-    if (sumInvMatch) {
-      if (!first) out.print('/');
-      out.print("~sum");
-      first = false;
-    }
-    if (xorMatch) {
-      if (!first) out.print('/');
-      out.print("xor");
-      first = false;
-    }
-    if (xorInvMatch) {
-      if (!first) out.print('/');
-      out.print("~xor");
-    }
-  }
-}
-
-void SLinkTranslator::printMessage(const uint8_t* data, uint16_t len, Stream& out) const {
-  if (!data || !len) return;
-  if (data[0] >= 0x90 && data[0] <= 0x92) return;
-
-  const SLinkPattern* pat = matchPattern(data, len);
-
-  out.print("raw=");
-  printHex(data, len, out);
-  out.print(" | msg=");
-  out.print(pat ? pat->name : "UNKNOWN");
-  out.print(" len=");
-  out.print(len);
-
-  out.print(" b0=0x");
-  printHexByte(data[0], out);
-  if (len >= 2) {
-    out.print(" b1=0x");
-    printHexByte(data[1], out);
-  }
-  if (len >= 3 && isDiscCommand(data[1])) {
-    const uint8_t rawDisc = data[2];
-    out.print(" disc_raw=0x");
-    printHexByte(rawDisc, out);
+  if (out.len >= 3 && isDiscCommand(out.cmd)) {
+    out.hasDisc = true;
+    out.discRaw = out.raw[2];
     uint16_t disc = 0;
-    if (decodeDiscNumber(rawDisc, data[0], disc)) {
-      out.print(" disc=");
-      out.print(disc);
-    } else {
-      out.print(" disc=?");
-    }
+    out.discValid = decodeDiscNumber(out.discRaw, out.unit, disc);
+    if (out.discValid) out.disc = disc;
   }
-  if (len >= 4 && isDiscTrackCommand(data[1])) {
-    const uint8_t rawTrack = data[3];
-    out.print(" track_raw=0x");
-    printHexByte(rawTrack, out);
+
+  if (out.len >= 4 && isDiscTrackCommand(out.cmd)) {
+    out.hasTrack = true;
+    out.trackRaw = out.raw[3];
     uint8_t track = 0;
-    if (decodeBcd(rawTrack, track)) {
-      out.print(" track=");
-      out.print(track);
-    } else {
-      out.print(" track=?");
-    }
-    if (len >= 6) {
-      out.print(" u0=0x");
-      printHexByte(data[4], out);
-      out.print(" u1=0x");
-      printHexByte(data[5], out);
+    out.trackValid = decodeBcd(out.trackRaw, track);
+    if (out.trackValid) out.track = track;
+
+    if (out.len > 4) {
+      uint16_t extraLen = out.len - 4;
+      if (extraLen > 2) extraLen = 2;
+      out.extraLen = (uint8_t)extraLen;
+      out.extra[0] = out.raw[4];
+      if (out.extraLen > 1) out.extra[1] = out.raw[5];
     }
   }
-  if (len > 2) {
-    out.print(" data=");
-    printHex(data + 2, len - 2, out);
-    printAscii(data + 2, len - 2, out);
+
+  if (out.len >= 2) {
+    out.hasChecksum = true;
+    uint8_t sum = 0;
+    uint8_t xr = 0;
+    for (uint16_t i = 0; i + 1 < out.len; i++) {
+      sum = (uint8_t)(sum + out.raw[i]);
+      xr ^= out.raw[i];
+    }
+    out.checksumLast = out.raw[out.len - 1];
+    out.checksumSum = sum;
+    out.checksumXor = xr;
+    out.checksumSumMatch = (out.checksumLast == sum);
+    out.checksumSumInvMatch = (out.checksumLast == (uint8_t)~sum);
+    out.checksumXorMatch = (out.checksumLast == xr);
+    out.checksumXorInvMatch = (out.checksumLast == (uint8_t)~xr);
   }
 
-  printChecksumHints(data, len, out);
-
-  if (pat && pat->note && pat->note[0]) {
-    out.print(" note=");
-    out.print(pat->note);
-  }
-
-  out.println();
+  return true;
 }
