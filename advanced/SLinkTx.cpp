@@ -1,0 +1,57 @@
+#include "SLinkTx.h"
+
+SLinkTx::SLinkTx(uint8_t pin) : _pin(pin) {}
+
+void SLinkTx::begin(bool usePullup) {
+  pinMode(_pin, usePullup ? INPUT_PULLUP : INPUT);
+}
+
+void SLinkTx::setTimings(uint16_t low0_us, uint16_t low1_us,
+                         uint16_t lowSync_us, uint16_t highGap_us,
+                         uint16_t endGap_us) {
+  _low0Us = low0_us;
+  _low1Us = low1_us;
+  _lowSyncUs = lowSync_us;
+  _highGapUs = highGap_us;
+  _endGapUs = endGap_us;
+}
+
+void SLinkTx::driveLow() {
+  pinMode(_pin, OUTPUT);
+  digitalWrite(_pin, HIGH);
+}
+
+void SLinkTx::releaseLine() {
+  pinMode(_pin, OUTPUT);
+  digitalWrite(_pin, LOW);
+}
+
+void SLinkTx::sendSync() {
+  driveLow();
+  delayMicroseconds(_lowSyncUs);
+  releaseLine();
+  delayMicroseconds(_highGapUs);
+}
+
+void SLinkTx::sendBit(bool one) {
+  driveLow();
+  delayMicroseconds(one ? _low1Us : _low0Us);
+  releaseLine();
+  delayMicroseconds(_highGapUs);
+}
+
+void SLinkTx::sendBytes(const uint8_t* data, uint16_t len) {
+  if (!data || !len) return;
+
+  noInterrupts();
+  sendSync();
+  for (uint16_t i = 0; i < len; i++) {
+    uint8_t b = data[i];
+    for (int8_t bit = 7; bit >= 0; bit--) {
+      sendBit((b >> bit) & 1);
+    }
+  }
+  releaseLine();
+  delayMicroseconds(_endGapUs);
+  interrupts();
+}
