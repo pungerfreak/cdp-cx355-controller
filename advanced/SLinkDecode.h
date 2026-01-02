@@ -36,6 +36,13 @@ struct SLinkMessage {
   uint8_t trackRaw = 0;
   bool    trackValid = false;
   uint8_t track = 0;
+  bool    hasTrackLength = false;
+  uint8_t trackMinRaw = 0;
+  uint8_t trackSecRaw = 0;
+  bool    trackMinValid = false;
+  bool    trackSecValid = false;
+  uint8_t trackMin = 0;
+  uint8_t trackSec = 0;
   uint8_t extraLen = 0;
   uint8_t extra[2] = {0, 0};
 

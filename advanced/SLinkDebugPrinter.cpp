@@ -98,13 +98,30 @@ void SLinkDebugPrinter::print(const SLinkMessage& msg, Stream& out) const {
     out.print(" track=");
     if (msg.trackValid) out.print(msg.track);
     else out.print('?');
-    if (msg.extraLen > 0) {
-      out.print(" u0=0x");
-      printHexByte(msg.extra[0], out);
-      if (msg.extraLen > 1) {
-        out.print(" u1=0x");
-        printHexByte(msg.extra[1], out);
-      }
+  }
+
+  if (msg.hasTrackLength) {
+    out.print(" length_raw=0x");
+    printHexByte(msg.trackMinRaw, out);
+    out.print(" 0x");
+    printHexByte(msg.trackSecRaw, out);
+    out.print(" length=");
+    if (msg.trackMinValid && msg.trackSecValid) {
+      out.print(msg.trackMin);
+      out.print(':');
+      if (msg.trackSec < 10) out.print('0');
+      out.print(msg.trackSec);
+    } else {
+      out.print('?');
+    }
+  }
+
+  if (msg.extraLen > 0) {
+    out.print(" u0=0x");
+    printHexByte(msg.extra[0], out);
+    if (msg.extraLen > 1) {
+      out.print(" u1=0x");
+      printHexByte(msg.extra[1], out);
     }
   }
 
