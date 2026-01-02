@@ -9,6 +9,7 @@ const SLinkPattern kPatterns[] = {
   {"POWER_ON",      "cmd", 2, 0, 2, {0x00, 0x2E}, {0x00, 0xFF}},
   {"POWER_OFF",     "cmd", 2, 0, 2, {0x00, 0x2F}, {0x00, 0xFF}},
   {"READY",         "cmd", 2, 0, 2, {0x00, 0x08}, {0x00, 0xFF}},
+  {"CHANGING_TRACK", "cmd", 6, 0, 2, {0x00, 0x50}, {0x00, 0xFF}},
   {"DISC_READY",    "cmd", 3, 0, 2, {0x00, 0x52}, {0x00, 0xFF}},
   {"LOADING_DISC",  "cmd", 3, 0, 2, {0x00, 0x54}, {0x00, 0xFF}},
   {"DISC_LOADED",   "cmd", 3, 0, 2, {0x00, 0x58}, {0x00, 0xFF}},
@@ -21,7 +22,11 @@ const SLinkPattern kPatterns[] = {
 constexpr uint16_t kPatternCount = sizeof(kPatterns) / sizeof(kPatterns[0]);
 
 bool isDiscCommand(uint8_t cmd) {
-  return (cmd == 0x52 || cmd == 0x54 || cmd == 0x58);
+  return (cmd == 0x50 || cmd == 0x52 || cmd == 0x54 || cmd == 0x58);
+}
+
+bool isDiscTrackCommand(uint8_t cmd) {
+  return (cmd == 0x50);
 }
 
 bool decodeDiscNumber(uint8_t raw, uint8_t unit, uint16_t& disc) {
@@ -41,6 +46,14 @@ bool decodeDiscNumber(uint8_t raw, uint8_t unit, uint16_t& disc) {
     return false;
   }
   return false;
+}
+
+bool decodeBcd(uint8_t raw, uint8_t& value) {
+  const uint8_t hi = (raw >> 4) & 0x0F;
+  const uint8_t lo = raw & 0x0F;
+  if (hi > 9 || lo > 9) return false;
+  value = (uint8_t)(hi * 10 + lo);
+  return true;
 }
 }  // namespace
 
@@ -172,6 +185,24 @@ void SLinkTranslator::printMessage(const uint8_t* data, uint16_t len, Stream& ou
       out.print(disc);
     } else {
       out.print(" disc=?");
+    }
+  }
+  if (len >= 4 && isDiscTrackCommand(data[1])) {
+    const uint8_t rawTrack = data[3];
+    out.print(" track_raw=0x");
+    printHexByte(rawTrack, out);
+    uint8_t track = 0;
+    if (decodeBcd(rawTrack, track)) {
+      out.print(" track=");
+      out.print(track);
+    } else {
+      out.print(" track=?");
+    }
+    if (len >= 6) {
+      out.print(" u0=0x");
+      printHexByte(data[4], out);
+      out.print(" u1=0x");
+      printHexByte(data[5], out);
     }
   }
   if (len > 2) {
