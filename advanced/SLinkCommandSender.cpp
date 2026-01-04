@@ -14,6 +14,17 @@ void SLinkCommandSender::setCurrentDisc(uint16_t disc) {
   _hasDisc = true;
 }
 
+bool SLinkCommandSender::takeLastFrame(uint8_t* out, uint16_t& len) {
+  if (!out) return false;
+  if (!_lastReady || _lastLen == 0) return false;
+  uint16_t n = _lastLen;
+  if (n > sizeof(_lastFrame)) n = sizeof(_lastFrame);
+  memcpy(out, _lastFrame, n);
+  len = n;
+  _lastReady = false;
+  return true;
+}
+
 bool SLinkCommandSender::play() {
   return sendCommand(PLAY);
 }

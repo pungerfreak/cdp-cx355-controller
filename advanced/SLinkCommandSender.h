@@ -10,6 +10,7 @@ public:
 
   void setUnit(uint8_t unit);
   void setCurrentDisc(uint16_t disc);
+  bool takeLastFrame(uint8_t* out, uint16_t& len);
   bool play() override;
   bool stop() override;
   bool pause() override;

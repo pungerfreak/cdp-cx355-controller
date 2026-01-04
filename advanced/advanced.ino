@@ -18,6 +18,7 @@ SLinkDebugPrinter debugPrinter(Serial);
 SLinkPrettyPrinter prettyPrinter(Serial);
 SLinkMessage message;
 constexpr bool kUsePretty = true;
+SLinkMessage txMessage;
 
 void setup() {
   Serial.begin(230400);
@@ -27,6 +28,16 @@ void setup() {
 
 void loop() {
   commandConsole.poll();
+  if (!kUsePretty) {
+    uint8_t txBuf[4];
+    uint16_t txLen = 0;
+    if (commandSender.takeLastFrame(txBuf, txLen)) {
+      if (translator.decode(txBuf, txLen, txMessage)) {
+        SLinkDebugInfo txDebug = SLinkDispatcher::buildDebugInfo(txMessage);
+        SLinkDispatcher::dispatch(txMessage, debugPrinter, &txDebug);
+      }
+    }
+  }
   if (slinkRx.poll(5000)) { // message gap in us
     if (slinkRx.error()) {
       Serial.println("frame error");
