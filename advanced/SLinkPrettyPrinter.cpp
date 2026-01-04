@@ -7,46 +7,116 @@ void printHexByte(uint8_t b, Stream& out) {
 }
 }  // namespace
 
-void SLinkPrettyPrinter::print(const SLinkMessage& msg, Stream& out) const {
-  if (!msg.len) return;
-  if (!msg.name || msg.name == kSLinkUnknownName) return;
+SLinkPrettyPrinter::SLinkPrettyPrinter(Stream& out) : _out(out) {}
 
-  out.print(msg.name);
-
-  if (msg.hasDisc) {
-    if (msg.discValid) {
-      out.print(" disc=");
-      out.print(msg.disc);
-    } else {
-      out.print(" disc=? disc_raw=0x");
-      printHexByte(msg.discRaw, out);
-    }
+void SLinkPrettyPrinter::printDisc(const SLinkDiscInfo& disc) {
+  if (!disc.present) return;
+  if (disc.valid) {
+    _out.print(" disc=");
+    _out.print(disc.disc);
+  } else {
+    _out.print(" disc=? disc_raw=0x");
+    printHexByte(disc.raw, _out);
   }
+}
 
-  if (msg.hasTrack) {
-    if (msg.trackValid) {
-      out.print(" track=");
-      out.print(msg.track);
-    } else {
-      out.print(" track=? track_raw=0x");
-      printHexByte(msg.trackRaw, out);
-    }
+void SLinkPrettyPrinter::printTrack(const SLinkTrackInfo& track) {
+  if (!track.present) return;
+  if (track.valid) {
+    _out.print(" track=");
+    _out.print(track.track);
+  } else {
+    _out.print(" track=? track_raw=0x");
+    printHexByte(track.raw, _out);
   }
+}
 
-  if (msg.hasTrackLength) {
-    if (msg.trackMinValid && msg.trackSecValid) {
-      out.print(" length=");
-      out.print(msg.trackMin);
-      out.print(':');
-      if (msg.trackSec < 10) out.print('0');
-      out.print(msg.trackSec);
-    } else {
-      out.print(" length=? length_raw=0x");
-      printHexByte(msg.trackMinRaw, out);
-      out.print(" 0x");
-      printHexByte(msg.trackSecRaw, out);
-    }
+void SLinkPrettyPrinter::printLength(const SLinkTrackInfo& track) {
+  if (!track.lengthPresent) return;
+  if (track.lengthValid) {
+    _out.print(" length=");
+    _out.print(track.minutes);
+    _out.print(':');
+    if (track.seconds < 10) _out.print('0');
+    _out.print(track.seconds);
+  } else {
+    _out.print(" length=? length_raw=0x");
+    printHexByte(track.minRaw, _out);
+    _out.print(" 0x");
+    printHexByte(track.secRaw, _out);
   }
+}
 
-  out.println();
+void SLinkPrettyPrinter::play(const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.println("PLAY");
+}
+
+void SLinkPrettyPrinter::stop(const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.println("STOP");
+}
+
+void SLinkPrettyPrinter::pause(const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.println("PAUSE");
+}
+
+void SLinkPrettyPrinter::powerOn(const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.println("POWER_ON");
+}
+
+void SLinkPrettyPrinter::powerOff(const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.println("POWER_OFF");
+}
+
+void SLinkPrettyPrinter::ready(const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.println("READY");
+}
+
+void SLinkPrettyPrinter::changingDisc(const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.println("CHANGING_DISC");
+}
+
+void SLinkPrettyPrinter::discReady(const SLinkDiscInfo& disc,
+                                   const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.print("DISC_READY");
+  printDisc(disc);
+  _out.println();
+}
+
+void SLinkPrettyPrinter::discLoaded(const SLinkDiscInfo& disc,
+                                    const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.print("DISC_LOADED");
+  printDisc(disc);
+  _out.println();
+}
+
+void SLinkPrettyPrinter::loadingDisc(const SLinkDiscInfo& disc,
+                                     const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.print("LOADING_DISC");
+  printDisc(disc);
+  _out.println();
+}
+
+void SLinkPrettyPrinter::changingTrack(const SLinkDiscInfo& disc,
+                                       const SLinkTrackInfo& track,
+                                       const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.print("CHANGING_TRACK");
+  printDisc(disc);
+  printTrack(track);
+  printLength(track);
+  _out.println();
+}
+
+void SLinkPrettyPrinter::unknown(const SLinkDebugInfo* debug) {
+  (void)debug;
 }

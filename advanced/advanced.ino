@@ -2,6 +2,7 @@
 #include "SLinkCommandSender.h"
 #include "SLinkDecode.h"
 #include "SLinkDebugPrinter.h"
+#include "SLinkInterface.h"
 #include "SLinkPrettyPrinter.h"
 #include "SLinkRx.h"
 #include "SLinkTx.h"
@@ -13,8 +14,8 @@ SLinkTx slinkTx(TX_PIN);
 SLinkCommandSender commandSender(slinkTx);
 SLinkCommandConsole commandConsole(Serial, commandSender);
 SLinkTranslator translator;
-SLinkDebugPrinter debugPrinter;
-SLinkPrettyPrinter prettyPrinter;
+SLinkDebugPrinter debugPrinter(Serial);
+SLinkPrettyPrinter prettyPrinter(Serial);
 SLinkMessage message;
 constexpr bool kUsePretty = true;
 
@@ -33,10 +34,11 @@ void loop() {
     }
     if (slinkRx.length()) {
       if (translator.decode(slinkRx.data(), slinkRx.length(), message)) {
+        SLinkDebugInfo debugInfo = SLinkDispatcher::buildDebugInfo(message);
         if (kUsePretty) {
-          prettyPrinter.print(message, Serial);
+          SLinkDispatcher::dispatch(message, prettyPrinter, &debugInfo);
         } else {
-          debugPrinter.print(message, Serial);
+          SLinkDispatcher::dispatch(message, debugPrinter, &debugInfo);
         }
       }
     }

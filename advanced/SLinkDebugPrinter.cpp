@@ -30,116 +30,172 @@ void printAscii(const uint8_t* data, uint16_t len, Stream& out) {
   }
   out.print('"');
 }
+}  // namespace
 
-void printChecksumHints(const SLinkMessage& msg, Stream& out) {
-  if (!msg.hasChecksum) return;
+SLinkDebugPrinter::SLinkDebugPrinter(Stream& out) : _out(out) {}
 
-  out.print(" chk_last=0x");
-  printHexByte(msg.checksumLast, out);
-  out.print(" sum=0x");
-  printHexByte(msg.checksumSum, out);
-  out.print(" xor=0x");
-  printHexByte(msg.checksumXor, out);
+void SLinkDebugPrinter::printDisc(const SLinkDiscInfo& disc) {
+  if (!disc.present) return;
+  _out.print(" disc_raw=0x");
+  printHexByte(disc.raw, _out);
+  _out.print(" disc=");
+  if (disc.valid) _out.print(disc.disc);
+  else _out.print('?');
+}
 
-  if (msg.checksumSumMatch || msg.checksumSumInvMatch ||
-      msg.checksumXorMatch || msg.checksumXorInvMatch) {
-    out.print(" chk=");
+void SLinkDebugPrinter::printTrack(const SLinkTrackInfo& track) {
+  if (!track.present) return;
+  _out.print(" track_raw=0x");
+  printHexByte(track.raw, _out);
+  _out.print(" track=");
+  if (track.valid) _out.print(track.track);
+  else _out.print('?');
+}
+
+void SLinkDebugPrinter::printLength(const SLinkTrackInfo& track) {
+  if (!track.lengthPresent) return;
+  _out.print(" length_raw=0x");
+  printHexByte(track.minRaw, _out);
+  _out.print(" 0x");
+  printHexByte(track.secRaw, _out);
+  _out.print(" length=");
+  if (track.lengthValid) {
+    _out.print(track.minutes);
+    _out.print(':');
+    if (track.seconds < 10) _out.print('0');
+    _out.print(track.seconds);
+  } else {
+    _out.print('?');
+  }
+}
+
+void SLinkDebugPrinter::printData(const SLinkDebugInfo& debug) {
+  if (!debug.raw || debug.len <= 2) return;
+  _out.print(" data=");
+  printHex(debug.raw + 2, debug.len - 2, _out);
+  printAscii(debug.raw + 2, debug.len - 2, _out);
+}
+
+void SLinkDebugPrinter::printChecksumHints(const SLinkDebugInfo& debug) {
+  if (!debug.hasChecksum) return;
+
+  _out.print(" chk_last=0x");
+  printHexByte(debug.checksumLast, _out);
+  _out.print(" sum=0x");
+  printHexByte(debug.checksumSum, _out);
+  _out.print(" xor=0x");
+  printHexByte(debug.checksumXor, _out);
+
+  if (debug.checksumSumMatch || debug.checksumSumInvMatch ||
+      debug.checksumXorMatch || debug.checksumXorInvMatch) {
+    _out.print(" chk=");
     bool first = true;
-    if (msg.checksumSumMatch) {
-      out.print("sum");
+    if (debug.checksumSumMatch) {
+      _out.print("sum");
       first = false;
     }
-    if (msg.checksumSumInvMatch) {
-      if (!first) out.print('/');
-      out.print("~sum");
+    if (debug.checksumSumInvMatch) {
+      if (!first) _out.print('/');
+      _out.print("~sum");
       first = false;
     }
-    if (msg.checksumXorMatch) {
-      if (!first) out.print('/');
-      out.print("xor");
+    if (debug.checksumXorMatch) {
+      if (!first) _out.print('/');
+      _out.print("xor");
       first = false;
     }
-    if (msg.checksumXorInvMatch) {
-      if (!first) out.print('/');
-      out.print("~xor");
+    if (debug.checksumXorInvMatch) {
+      if (!first) _out.print('/');
+      _out.print("~xor");
     }
   }
 }
-}  // namespace
 
-void SLinkDebugPrinter::print(const SLinkMessage& msg, Stream& out) const {
-  if (!msg.len) return;
-
-  out.print("raw=");
-  printHex(msg.raw, msg.len, out);
-  out.print(" | msg=");
-  out.print(msg.name ? msg.name : kSLinkUnknownName);
-  out.print(" len=");
-  out.print(msg.len);
-
-  out.print(" b0=0x");
-  printHexByte(msg.unit, out);
-  if (msg.len >= 2) {
-    out.print(" b1=0x");
-    printHexByte(msg.cmd, out);
+void SLinkDebugPrinter::printLine(const char* name,
+                                 const SLinkDiscInfo* disc,
+                                 const SLinkTrackInfo* track,
+                                 const SLinkDebugInfo* debug) {
+  if (!debug || !debug->raw || !debug->len) {
+    _out.print("msg=");
+    _out.println(name);
+    return;
   }
 
-  if (msg.hasDisc) {
-    out.print(" disc_raw=0x");
-    printHexByte(msg.discRaw, out);
-    out.print(" disc=");
-    if (msg.discValid) out.print(msg.disc);
-    else out.print('?');
+  _out.print("raw=");
+  printHex(debug->raw, debug->len, _out);
+  _out.print(" | msg=");
+  _out.print(name);
+  _out.print(" len=");
+  _out.print(debug->len);
+
+  _out.print(" b0=0x");
+  printHexByte(debug->unit, _out);
+  if (debug->len >= 2) {
+    _out.print(" b1=0x");
+    printHexByte(debug->cmd, _out);
   }
 
-  if (msg.hasTrack) {
-    out.print(" track_raw=0x");
-    printHexByte(msg.trackRaw, out);
-    out.print(" track=");
-    if (msg.trackValid) out.print(msg.track);
-    else out.print('?');
+  if (disc) printDisc(*disc);
+  if (track) {
+    printTrack(*track);
+    printLength(*track);
   }
 
-  if (msg.hasTrackLength) {
-    out.print(" length_raw=0x");
-    printHexByte(msg.trackMinRaw, out);
-    out.print(" 0x");
-    printHexByte(msg.trackSecRaw, out);
-    out.print(" length=");
-    if (msg.trackMinValid && msg.trackSecValid) {
-      out.print(msg.trackMin);
-      out.print(':');
-      if (msg.trackSec < 10) out.print('0');
-      out.print(msg.trackSec);
-    } else {
-      out.print('?');
-    }
-  }
+  printData(*debug);
+  printChecksumHints(*debug);
+  if (debug->truncated) _out.print(" trunc=1");
+  _out.println();
+}
 
-  if (msg.extraLen > 0) {
-    out.print(" u0=0x");
-    printHexByte(msg.extra[0], out);
-    if (msg.extraLen > 1) {
-      out.print(" u1=0x");
-      printHexByte(msg.extra[1], out);
-    }
-  }
+void SLinkDebugPrinter::play(const SLinkDebugInfo* debug) {
+  printLine("PLAY", nullptr, nullptr, debug);
+}
 
-  if (msg.len > 2) {
-    out.print(" data=");
-    printHex(msg.raw + 2, msg.len - 2, out);
-    printAscii(msg.raw + 2, msg.len - 2, out);
-  }
+void SLinkDebugPrinter::stop(const SLinkDebugInfo* debug) {
+  printLine("STOP", nullptr, nullptr, debug);
+}
 
-  printChecksumHints(msg, out);
+void SLinkDebugPrinter::pause(const SLinkDebugInfo* debug) {
+  printLine("PAUSE", nullptr, nullptr, debug);
+}
 
-  if (msg.note) {
-    out.print(" note=");
-    out.print(msg.note);
-  }
-  if (msg.truncated) {
-    out.print(" trunc=1");
-  }
+void SLinkDebugPrinter::powerOn(const SLinkDebugInfo* debug) {
+  printLine("POWER_ON", nullptr, nullptr, debug);
+}
 
-  out.println();
+void SLinkDebugPrinter::powerOff(const SLinkDebugInfo* debug) {
+  printLine("POWER_OFF", nullptr, nullptr, debug);
+}
+
+void SLinkDebugPrinter::ready(const SLinkDebugInfo* debug) {
+  printLine("READY", nullptr, nullptr, debug);
+}
+
+void SLinkDebugPrinter::changingDisc(const SLinkDebugInfo* debug) {
+  printLine("CHANGING_DISC", nullptr, nullptr, debug);
+}
+
+void SLinkDebugPrinter::discReady(const SLinkDiscInfo& disc,
+                                  const SLinkDebugInfo* debug) {
+  printLine("DISC_READY", &disc, nullptr, debug);
+}
+
+void SLinkDebugPrinter::discLoaded(const SLinkDiscInfo& disc,
+                                   const SLinkDebugInfo* debug) {
+  printLine("DISC_LOADED", &disc, nullptr, debug);
+}
+
+void SLinkDebugPrinter::loadingDisc(const SLinkDiscInfo& disc,
+                                    const SLinkDebugInfo* debug) {
+  printLine("LOADING_DISC", &disc, nullptr, debug);
+}
+
+void SLinkDebugPrinter::changingTrack(const SLinkDiscInfo& disc,
+                                      const SLinkTrackInfo& track,
+                                      const SLinkDebugInfo* debug) {
+  printLine("CHANGING_TRACK", &disc, &track, debug);
+}
+
+void SLinkDebugPrinter::unknown(const SLinkDebugInfo* debug) {
+  printLine("UNKNOWN", nullptr, nullptr, debug);
 }
