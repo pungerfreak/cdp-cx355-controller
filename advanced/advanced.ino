@@ -6,7 +6,7 @@
 #include "SLinkRx.h"
 #include "SLinkTx.h"
 
-const uint8_t TX_PIN = 7;
+const uint8_t TX_PIN = 2;
 const uint8_t RX_PIN = 21;
 SLinkRx slinkRx(RX_PIN);
 SLinkTx slinkTx(TX_PIN);
