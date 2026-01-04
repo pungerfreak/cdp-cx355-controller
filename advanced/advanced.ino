@@ -20,8 +20,8 @@ constexpr bool kUsePretty = true;
 
 void setup() {
   Serial.begin(230400);
-  slinkRx.begin(true);      // INPUT_PULLUP
-  slinkTx.begin(false);
+  slinkRx.begin();
+  slinkTx.begin();
 }
 
 void loop() {

@@ -6,7 +6,7 @@ public:
   explicit SLinkRx(uint8_t pin);
 
   // call from setup()
-  void begin(bool usePullup = true);
+  void begin();
 
   // call from loop(); returns true when a complete message is available
   bool poll(uint32_t gap_us = 5000);

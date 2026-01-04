@@ -5,7 +5,7 @@ class SLinkTx {
 public:
   explicit SLinkTx(uint8_t pin);
 
-  void begin(bool usePullup = false);
+  void begin();
   void sendBytes(const uint8_t* data, uint16_t len);
   void setTimings(uint16_t low0_us, uint16_t low1_us,
                   uint16_t lowSync_us, uint16_t highGap_us,

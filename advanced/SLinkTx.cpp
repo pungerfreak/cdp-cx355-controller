@@ -2,8 +2,8 @@
 
 SLinkTx::SLinkTx(uint8_t pin) : _pin(pin) {}
 
-void SLinkTx::begin(bool usePullup) {
-  pinMode(_pin, usePullup ? INPUT_PULLUP : INPUT);
+void SLinkTx::begin() {
+  pinMode(_pin, INPUT_PULLDOWN);
 }
 
 void SLinkTx::setTimings(uint16_t low0_us, uint16_t low1_us,

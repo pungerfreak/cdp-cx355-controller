@@ -4,14 +4,13 @@ SLinkRx* SLinkRx::_instance = nullptr;
 
 SLinkRx::SLinkRx(uint8_t pin) : _pin(pin) {}
 
-void SLinkRx::begin(bool usePullup) {
+void SLinkRx::begin() {
   if (_instance && _instance != this) {
     // simplest: only allow one active instance
     // (could assert/log if you want)
   }
   _instance = this;
-
-  pinMode(_pin, usePullup ? INPUT_PULLUP : INPUT);
+  pinMode(_pin, INPUT);
 
   noInterrupts();
   _msgLen = 0;
