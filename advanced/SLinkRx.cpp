@@ -107,6 +107,9 @@ inline void IRAM_ATTR SLinkRx::pushBitISR(uint8_t b) {
 
 void IRAM_ATTR SLinkRx::onEdgeISR() {
   static constexpr uint32_t kGlitchMinUs = 900;
+  static constexpr uint32_t kBit0MinUs = 900;
+  static constexpr uint32_t kBit1MinUs = 1500;
+  static constexpr uint32_t kSyncMinUs = 2100;
 
   uint32_t now = micros();
   uint32_t dt  = now - _lastSymbolUs;
@@ -122,7 +125,7 @@ void IRAM_ATTR SLinkRx::onEdgeISR() {
   if (dt == 0) return;
 
   // thresholds for edge-to-edge classification
-  if (dt > 2700) {
+  if (dt >= kSyncMinUs) {
     if (_inFrame && (_bitCount % 8) != 0) _msgError = true;
     resetFrameISR();
     return;
@@ -130,9 +133,9 @@ void IRAM_ATTR SLinkRx::onEdgeISR() {
 
   if (!_inFrame) return;
 
-  if (dt > 1500) {
+  if (dt >= kBit1MinUs) {
     pushBitISR(1);
-  } else if (dt >= 900) {
+  } else if (dt >= kBit0MinUs) {
     pushBitISR(0);
   }
   else {
