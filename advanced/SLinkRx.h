@@ -28,7 +28,7 @@ private:
   volatile uint8_t  _msg[BYTES_MAX];
   volatile uint16_t _msgLen = 0;
 
-  volatile uint32_t _lastRiseUs = 0;
+  volatile uint32_t _lastSymbolUs = 0;
   volatile uint32_t _lastEdgeUs = 0;
 
   volatile uint8_t  _curByte = 0;
@@ -42,7 +42,7 @@ private:
   static SLinkRx* _instance;
 
   static void IRAM_ATTR isrThunk();
-  void IRAM_ATTR onRiseISR();
+  void IRAM_ATTR onEdgeISR();
 
   inline void resetFrameISR();
   inline void pushBitISR(uint8_t b);
