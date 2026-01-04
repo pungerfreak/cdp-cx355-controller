@@ -5,7 +5,7 @@ SLinkCommandConsole::SLinkCommandConsole(Stream& io, SLinkInputInterface& input)
     : _io(io), _input(input) {}
 
 void SLinkCommandConsole::printHelp() {
-  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, DISC <n>, TRACK <n>");
+  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, DISC <1-300>, TRACK <1-99>");
 }
 
 bool SLinkCommandConsole::normalizeCommand(const char* in, char* out, uint8_t outSize) const {
@@ -83,6 +83,10 @@ bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
       !parsePrefixedNumber(cmd, "CHANGE_DISC", disc)) {
     return false;
   }
+  if (disc == 0 || disc > 300u) {
+    _io.println("invalid: DISC");
+    return true;
+  }
   if (_input.changeDisc(disc)) {
     printTx("DISC", disc);
   } else {
@@ -97,7 +101,7 @@ bool SLinkCommandConsole::dispatchTrack(const char* cmd) {
       !parsePrefixedNumber(cmd, "CHANGE_TRACK", track)) {
     return false;
   }
-  if (track > 255u) {
+  if (track == 0 || track > 99u) {
     _io.println("invalid: TRACK");
     return true;
   }
