@@ -1,10 +1,10 @@
 #pragma once
 #include <Arduino.h>
-#include "SLinkCommandSink.h"
+#include "SLinkInputInterface.h"
 
 class SLinkCommandConsole {
 public:
-  SLinkCommandConsole(Stream& io, SLinkCommandSink& sink);
+  SLinkCommandConsole(Stream& io, SLinkInputInterface& input);
 
   void poll();
   void handleLine(const char* line);
@@ -14,11 +14,16 @@ private:
   static constexpr uint8_t kBufferSize = 32;
 
   bool normalizeCommand(const char* in, char* out, uint8_t outSize) const;
-  bool parseCommand(const char* cmd, SLinkCommandId& id) const;
   bool isHelpCommand(const char* cmd) const;
+  bool parseNumber(const char* in, uint16_t& value) const;
+  bool parsePrefixedNumber(const char* cmd, const char* prefix, uint16_t& value) const;
+  bool dispatchSimple(const char* cmd);
+  bool dispatchDisc(const char* cmd);
+  bool dispatchTrack(const char* cmd);
+  void printTx(const char* label, uint16_t value);
 
   Stream& _io;
-  SLinkCommandSink& _sink;
+  SLinkInputInterface& _input;
   char _buf[kBufferSize];
   uint8_t _len = 0;
 };

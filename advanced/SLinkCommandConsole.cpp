@@ -1,10 +1,11 @@
 #include "SLinkCommandConsole.h"
+#include <string.h>
 
-SLinkCommandConsole::SLinkCommandConsole(Stream& io, SLinkCommandSink& sink)
-    : _io(io), _sink(sink) {}
+SLinkCommandConsole::SLinkCommandConsole(Stream& io, SLinkInputInterface& input)
+    : _io(io), _input(input) {}
 
 void SLinkCommandConsole::printHelp() {
-  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF");
+  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, DISC <n>, TRACK <n>");
 }
 
 bool SLinkCommandConsole::normalizeCommand(const char* in, char* out, uint8_t outSize) const {
@@ -36,29 +37,76 @@ bool SLinkCommandConsole::isHelpCommand(const char* cmd) const {
   return (strcmp(cmd, "?") == 0 || strcmp(cmd, "HELP") == 0);
 }
 
-bool SLinkCommandConsole::parseCommand(const char* cmd, SLinkCommandId& id) const {
+bool SLinkCommandConsole::parseNumber(const char* in, uint16_t& value) const {
+  if (!in || !*in) return false;
+  uint32_t v = 0;
+  for (uint8_t i = 0; in[i] != '\0'; i++) {
+    char c = in[i];
+    if (c < '0' || c > '9') return false;
+    v = v * 10u + (uint32_t)(c - '0');
+    if (v > 65535u) return false;
+  }
+  value = (uint16_t)v;
+  return true;
+}
+
+bool SLinkCommandConsole::parsePrefixedNumber(const char* cmd,
+                                              const char* prefix,
+                                              uint16_t& value) const {
+  if (!cmd || !prefix) return false;
+  const size_t len = strlen(prefix);
+  if (strncmp(cmd, prefix, len) != 0) return false;
+  if (cmd[len] != '_') return false;
+  return parseNumber(cmd + len + 1, value);
+}
+
+bool SLinkCommandConsole::dispatchSimple(const char* cmd) {
   if (!cmd) return false;
-  if (strcmp(cmd, "PLAY") == 0) {
-    id = PLAY;
-    return true;
-  }
-  if (strcmp(cmd, "STOP") == 0) {
-    id = STOP;
-    return true;
-  }
-  if (strcmp(cmd, "PAUSE") == 0) {
-    id = PAUSE;
-    return true;
-  }
-  if (strcmp(cmd, "POWER_ON") == 0) {
-    id = POWER_ON;
-    return true;
-  }
-  if (strcmp(cmd, "POWER_OFF") == 0) {
-    id = POWER_OFF;
-    return true;
-  }
+  if (strcmp(cmd, "PLAY") == 0) return _input.play();
+  if (strcmp(cmd, "STOP") == 0) return _input.stop();
+  if (strcmp(cmd, "PAUSE") == 0) return _input.pause();
+  if (strcmp(cmd, "POWER_ON") == 0) return _input.powerOn();
+  if (strcmp(cmd, "POWER_OFF") == 0) return _input.powerOff();
   return false;
+}
+
+void SLinkCommandConsole::printTx(const char* label, uint16_t value) {
+  _io.print("tx: ");
+  _io.print(label);
+  _io.print(' ');
+  _io.println(value);
+}
+
+bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
+  uint16_t disc = 0;
+  if (!parsePrefixedNumber(cmd, "DISC", disc) &&
+      !parsePrefixedNumber(cmd, "CHANGE_DISC", disc)) {
+    return false;
+  }
+  if (_input.changeDisc(disc)) {
+    printTx("DISC", disc);
+  } else {
+    _io.println("unsupported: DISC");
+  }
+  return true;
+}
+
+bool SLinkCommandConsole::dispatchTrack(const char* cmd) {
+  uint16_t track = 0;
+  if (!parsePrefixedNumber(cmd, "TRACK", track) &&
+      !parsePrefixedNumber(cmd, "CHANGE_TRACK", track)) {
+    return false;
+  }
+  if (track > 255u) {
+    _io.println("invalid: TRACK");
+    return true;
+  }
+  if (_input.changeTrack((uint8_t)track)) {
+    printTx("TRACK", track);
+  } else {
+    _io.println("unsupported: TRACK");
+  }
+  return true;
 }
 
 void SLinkCommandConsole::handleLine(const char* line) {
@@ -70,11 +118,20 @@ void SLinkCommandConsole::handleLine(const char* line) {
     return;
   }
 
-  SLinkCommandId id;
-  if (parseCommand(normalized, id)) {
+  if (dispatchSimple(normalized)) {
     _io.print("tx: ");
     _io.println(normalized);
-    _sink.sendCommand(id);
+    return;
+  }
+  if (dispatchDisc(normalized)) return;
+  if (dispatchTrack(normalized)) return;
+
+  if (strcmp(normalized, "PLAY") == 0 ||
+      strcmp(normalized, "STOP") == 0 ||
+      strcmp(normalized, "PAUSE") == 0 ||
+      strcmp(normalized, "POWER_ON") == 0 ||
+      strcmp(normalized, "POWER_OFF") == 0) {
+    _io.println("unsupported: command");
     return;
   }
 
