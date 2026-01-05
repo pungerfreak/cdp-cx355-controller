@@ -23,6 +23,19 @@ void SLinkStateTracker::stop(const SLinkDebugInfo* debug) { (void)debug; }
 void SLinkStateTracker::pause(const SLinkDebugInfo* debug) { (void)debug; }
 void SLinkStateTracker::powerOn(const SLinkDebugInfo* debug) { (void)debug; }
 void SLinkStateTracker::powerOff(const SLinkDebugInfo* debug) { (void)debug; }
+void SLinkStateTracker::changeDisc(const SLinkDiscInfo& disc,
+                                   const SLinkDebugInfo* debug) {
+  (void)disc;
+  (void)debug;
+}
+
+void SLinkStateTracker::changeTrack(const SLinkDiscInfo& disc,
+                                    const SLinkTrackInfo& track,
+                                    const SLinkDebugInfo* debug) {
+  (void)disc;
+  (void)track;
+  (void)debug;
+}
 void SLinkStateTracker::ready(const SLinkDebugInfo* debug) { (void)debug; }
 void SLinkStateTracker::changingDisc(const SLinkDebugInfo* debug) { (void)debug; }
 

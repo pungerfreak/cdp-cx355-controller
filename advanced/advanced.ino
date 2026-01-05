@@ -16,7 +16,7 @@ constexpr bool debugToSerial = true;
 SLinkRx slinkRx(RX_PIN);
 SLinkTx slinkTx(TX_PIN);
 SLinkCommandSender commandSender(slinkTx);
-SLinkCommandConsole commandConsole(Serial, commandSender);
+SLinkCommandConsole commandConsole(Serial, commandSender, true);
 SLinkTranslator translator;
 SLinkDebugPrinter debugPrinter(Serial);
 SLinkPrettyPrinter prettyPrinter(Serial);

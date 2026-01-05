@@ -167,6 +167,17 @@ void SLinkDebugPrinter::powerOff(const SLinkDebugInfo* debug) {
   printLine("POWER_OFF", nullptr, nullptr, debug);
 }
 
+void SLinkDebugPrinter::changeDisc(const SLinkDiscInfo& disc,
+                                   const SLinkDebugInfo* debug) {
+  printLine("CHANGE_DISC", &disc, nullptr, debug);
+}
+
+void SLinkDebugPrinter::changeTrack(const SLinkDiscInfo& disc,
+                                    const SLinkTrackInfo& track,
+                                    const SLinkDebugInfo* debug) {
+  printLine("CHANGE_TRACK", &disc, &track, debug);
+}
+
 void SLinkDebugPrinter::ready(const SLinkDebugInfo* debug) {
   printLine("READY", nullptr, nullptr, debug);
 }

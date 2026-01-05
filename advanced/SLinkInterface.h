@@ -47,6 +47,10 @@ public:
   virtual void pause(const SLinkDebugInfo* debug) = 0;
   virtual void powerOn(const SLinkDebugInfo* debug) = 0;
   virtual void powerOff(const SLinkDebugInfo* debug) = 0;
+  virtual void changeDisc(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) = 0;
+  virtual void changeTrack(const SLinkDiscInfo& disc,
+                           const SLinkTrackInfo& track,
+                           const SLinkDebugInfo* debug) = 0;
   virtual void ready(const SLinkDebugInfo* debug) = 0;
   virtual void changingDisc(const SLinkDebugInfo* debug) = 0;
   virtual void discReady(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) = 0;

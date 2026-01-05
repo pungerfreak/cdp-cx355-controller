@@ -1,8 +1,8 @@
 #include "SLinkCommandConsole.h"
 #include <string.h>
 
-SLinkCommandConsole::SLinkCommandConsole(Stream& io, SLinkInputInterface& input)
-    : _io(io), _input(input) {}
+SLinkCommandConsole::SLinkCommandConsole(Stream& io, SLinkInputInterface& input, bool printTx)
+    : _io(io), _input(input), _printTx(printTx) {}
 
 void SLinkCommandConsole::printHelp() {
   _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, DISC <1-300>, TRACK <1-99>");
@@ -62,15 +62,42 @@ bool SLinkCommandConsole::parsePrefixedNumber(const char* cmd,
 
 bool SLinkCommandConsole::dispatchSimple(const char* cmd) {
   if (!cmd) return false;
-  if (strcmp(cmd, "PLAY") == 0) return _input.play();
-  if (strcmp(cmd, "STOP") == 0) return _input.stop();
-  if (strcmp(cmd, "PAUSE") == 0) return _input.pause();
-  if (strcmp(cmd, "POWER_ON") == 0) return _input.powerOn();
-  if (strcmp(cmd, "POWER_OFF") == 0) return _input.powerOff();
+  if (strcmp(cmd, "PLAY") == 0) {
+    printTx("PLAY");
+    if (!_input.play()) _io.println("unsupported: PLAY");
+    return true;
+  }
+  if (strcmp(cmd, "STOP") == 0) {
+    printTx("STOP");
+    if (!_input.stop()) _io.println("unsupported: STOP");
+    return true;
+  }
+  if (strcmp(cmd, "PAUSE") == 0) {
+    printTx("PAUSE");
+    if (!_input.pause()) _io.println("unsupported: PAUSE");
+    return true;
+  }
+  if (strcmp(cmd, "POWER_ON") == 0) {
+    printTx("POWER_ON");
+    if (!_input.powerOn()) _io.println("unsupported: POWER_ON");
+    return true;
+  }
+  if (strcmp(cmd, "POWER_OFF") == 0) {
+    printTx("POWER_OFF");
+    if (!_input.powerOff()) _io.println("unsupported: POWER_OFF");
+    return true;
+  }
   return false;
 }
 
+void SLinkCommandConsole::printTx(const char* label) {
+  if (!_printTx) return;
+  _io.print("tx: ");
+  _io.println(label);
+}
+
 void SLinkCommandConsole::printTx(const char* label, uint16_t value) {
+  if (!_printTx) return;
   _io.print("tx: ");
   _io.print(label);
   _io.print(' ');
@@ -87,8 +114,8 @@ bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
     _io.println("invalid: DISC");
     return true;
   }
+  printTx("DISC", disc);
   if (_input.changeDisc(disc)) {
-    printTx("DISC", disc);
   } else {
     _io.println("unsupported: DISC");
   }
@@ -105,8 +132,8 @@ bool SLinkCommandConsole::dispatchTrack(const char* cmd) {
     _io.println("invalid: TRACK");
     return true;
   }
+  printTx("TRACK", track);
   if (_input.changeTrack((uint8_t)track)) {
-    printTx("TRACK", track);
   } else {
     _io.println("unsupported: TRACK");
   }
@@ -122,22 +149,9 @@ void SLinkCommandConsole::handleLine(const char* line) {
     return;
   }
 
-  if (dispatchSimple(normalized)) {
-    _io.print("tx: ");
-    _io.println(normalized);
-    return;
-  }
+  if (dispatchSimple(normalized)) return;
   if (dispatchDisc(normalized)) return;
   if (dispatchTrack(normalized)) return;
-
-  if (strcmp(normalized, "PLAY") == 0 ||
-      strcmp(normalized, "STOP") == 0 ||
-      strcmp(normalized, "PAUSE") == 0 ||
-      strcmp(normalized, "POWER_ON") == 0 ||
-      strcmp(normalized, "POWER_OFF") == 0) {
-    _io.println("unsupported: command");
-    return;
-  }
 
   _io.print("unknown: ");
   _io.println(normalized);

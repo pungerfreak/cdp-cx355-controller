@@ -80,6 +80,14 @@ void SLinkDispatcher::dispatch(const SLinkMessage& msg,
     iface.powerOff(debug);
     return;
   }
+  if (nameIs(msg.name, "CHANGE_DISC")) {
+    iface.changeDisc(makeDiscInfo(msg), debug);
+    return;
+  }
+  if (nameIs(msg.name, "CHANGE_TRACK")) {
+    iface.changeTrack(makeDiscInfo(msg), makeTrackInfo(msg), debug);
+    return;
+  }
   if (nameIs(msg.name, "READY")) {
     iface.ready(debug);
     return;

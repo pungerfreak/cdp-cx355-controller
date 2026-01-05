@@ -72,6 +72,24 @@ void SLinkPrettyPrinter::powerOff(const SLinkDebugInfo* debug) {
   _out.println("POWER_OFF");
 }
 
+void SLinkPrettyPrinter::changeDisc(const SLinkDiscInfo& disc,
+                                    const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.print("CHANGE_DISC");
+  printDisc(disc);
+  _out.println();
+}
+
+void SLinkPrettyPrinter::changeTrack(const SLinkDiscInfo& disc,
+                                     const SLinkTrackInfo& track,
+                                     const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.print("CHANGE_TRACK");
+  printDisc(disc);
+  printTrack(track);
+  _out.println();
+}
+
 void SLinkPrettyPrinter::ready(const SLinkDebugInfo* debug) {
   (void)debug;
   _out.println("READY");

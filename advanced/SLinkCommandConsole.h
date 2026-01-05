@@ -4,7 +4,7 @@
 
 class SLinkCommandConsole {
 public:
-  SLinkCommandConsole(Stream& io, SLinkInputInterface& input);
+  SLinkCommandConsole(Stream& io, SLinkInputInterface& input, bool printTx);
 
   void poll();
   void handleLine(const char* line);
@@ -20,10 +20,12 @@ private:
   bool dispatchSimple(const char* cmd);
   bool dispatchDisc(const char* cmd);
   bool dispatchTrack(const char* cmd);
+  void printTx(const char* label);
   void printTx(const char* label, uint16_t value);
 
   Stream& _io;
   SLinkInputInterface& _input;
+  bool _printTx = true;
   char _buf[kBufferSize];
   uint8_t _len = 0;
 };
