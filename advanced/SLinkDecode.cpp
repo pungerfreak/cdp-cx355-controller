@@ -49,7 +49,7 @@ bool decodeDiscNumber(uint8_t raw, uint8_t unit, uint16_t& disc) {
     }
     return false;
   }
-  if (unit == 0x9B || unit == 0x9C) {
+  if (unit == 0x9B || unit == 0x93) {
     if (raw >= 0x01 && raw <= 0x64) {
       disc = (uint16_t)raw + 200;
       return true;

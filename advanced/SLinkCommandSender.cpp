@@ -117,7 +117,7 @@ bool SLinkCommandSender::encodeDiscUnit(uint16_t disc, uint8_t& unit) const {
     return true;
   }
   if (disc >= 201 && disc <= 300) {
-    unit = 0x9C;
+    unit = 0x93;
     return true;
   }
   return false;
