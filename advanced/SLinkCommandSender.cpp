@@ -94,7 +94,13 @@ bool SLinkCommandSender::sendChange(uint16_t disc, uint8_t track) {
 }
 
 bool SLinkCommandSender::encodeDiscRaw(uint16_t disc, uint8_t& raw) const {
-  if (disc >= 1 && disc <= 200) {
+  if (disc >= 1 && disc <= 99) {
+    uint8_t bcd = 0;
+    if (!encodeBcd((uint8_t)disc, bcd)) return false;
+    raw = bcd;
+    return true;
+  }
+  if (disc >= 100 && disc <= 200) {
     raw = (uint8_t)(disc + 0x36);
     return true;
   }

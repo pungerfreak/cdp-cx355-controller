@@ -31,16 +31,23 @@ bool isDiscTrackCommand(uint8_t cmd) {
   return (cmd == 0x50);
 }
 
+bool decodeBcd(uint8_t raw, uint8_t& value);
+
 bool decodeDiscNumber(uint8_t raw, uint8_t unit, uint16_t& disc) {
   disc = 0;
-  if (unit == 0x98) {
-    if (raw >= 0x37 && raw <= 0xFE) {
+  if (unit == 0x90 || unit == 0x98) {
+    uint8_t bcd = 0;
+    if (decodeBcd(raw, bcd) && bcd >= 1 && bcd <= 99) {
+      disc = bcd;
+      return true;
+    }
+    if (raw >= 0x9A && raw <= 0xFE) {
       disc = (uint16_t)raw - 0x36;
       return true;
     }
     return false;
   }
-  if (unit == 0x9B) {
+  if (unit == 0x9B || unit == 0x9C) {
     if (raw >= 0x01 && raw <= 0x64) {
       disc = (uint16_t)raw + 200;
       return true;
