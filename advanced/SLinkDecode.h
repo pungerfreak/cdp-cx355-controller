@@ -58,7 +58,8 @@ struct SLinkMessage {
 
 class SLinkTranslator {
 public:
-  bool decode(const uint8_t* data, uint16_t len, SLinkMessage& out) const;
+  bool decode(const uint8_t* data, uint16_t len, SLinkMessage& out,
+              bool allowController = false) const;
 
 private:
   const SLinkPattern* matchPattern(const uint8_t* data, uint16_t len) const;

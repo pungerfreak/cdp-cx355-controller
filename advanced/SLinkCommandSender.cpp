@@ -14,6 +14,11 @@ void SLinkCommandSender::setCurrentDisc(uint16_t disc) {
   _hasDisc = true;
 }
 
+void SLinkCommandSender::setTxCallback(TxCallback cb, void* context) {
+  _txCallback = cb;
+  _txCallbackCtx = context;
+}
+
 bool SLinkCommandSender::takeLastFrame(uint8_t* out, uint16_t& len) {
   if (!out) return false;
   if (!_lastReady || _lastLen == 0) return false;
@@ -66,21 +71,25 @@ bool SLinkCommandSender::sendCommand(SLinkCommandId id) {
 bool SLinkCommandSender::sendCommand(const SLinkCommand& cmd) {
   uint8_t frame[2];
   encodeCommand(cmd, frame);
-  _tx.sendBytes(frame, sizeof(frame));
   storeLastFrame(frame, sizeof(frame));
+  if (_txCallback) _txCallback(frame, sizeof(frame), _txCallbackCtx);
+  _tx.sendBytes(frame, sizeof(frame));
   return true;
 }
 
 bool SLinkCommandSender::sendChange(uint16_t disc, uint8_t track) {
   static constexpr uint8_t kCmdChangeTrack = 0x50;
+  uint8_t unit = 0;
   uint8_t discRaw = 0;
   uint8_t trackRaw = 0;
+  if (!encodeDiscUnit(disc, unit)) return false;
   if (!encodeDiscRaw(disc, discRaw)) return false;
   if (!encodeBcd(track, trackRaw)) return false;
 
-  uint8_t frame[4] = {_unit, kCmdChangeTrack, discRaw, trackRaw};
-  _tx.sendBytes(frame, sizeof(frame));
+  uint8_t frame[4] = {unit, kCmdChangeTrack, discRaw, trackRaw};
   storeLastFrame(frame, sizeof(frame));
+  if (_txCallback) _txCallback(frame, sizeof(frame), _txCallbackCtx);
+  _tx.sendBytes(frame, sizeof(frame));
   return true;
 }
 
@@ -91,6 +100,18 @@ bool SLinkCommandSender::encodeDiscRaw(uint16_t disc, uint8_t& raw) const {
   }
   if (disc >= 201 && disc <= 300) {
     raw = (uint8_t)(disc - 200);
+    return true;
+  }
+  return false;
+}
+
+bool SLinkCommandSender::encodeDiscUnit(uint16_t disc, uint8_t& unit) const {
+  if (disc >= 1 && disc <= 200) {
+    unit = 0x90;
+    return true;
+  }
+  if (disc >= 201 && disc <= 300) {
+    unit = 0x9C;
     return true;
   }
   return false;

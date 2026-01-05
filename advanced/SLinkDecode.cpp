@@ -81,9 +81,10 @@ const SLinkPattern* SLinkTranslator::matchPattern(const uint8_t* data, uint16_t 
   return nullptr;
 }
 
-bool SLinkTranslator::decode(const uint8_t* data, uint16_t len, SLinkMessage& out) const {
+bool SLinkTranslator::decode(const uint8_t* data, uint16_t len, SLinkMessage& out,
+                             bool allowController) const {
   if (!data || !len) return false;
-  if (data[0] >= 0x90 && data[0] <= 0x92) return false;
+  if (!allowController && data[0] >= 0x90 && data[0] <= 0x92) return false;
 
   memset(&out, 0, sizeof(out));
   const uint16_t copyLen = (len > SLinkMessage::RAW_MAX) ? SLinkMessage::RAW_MAX : len;

@@ -16,6 +16,9 @@ public:
   const uint8_t* data() const;
   bool error() const;
 
+  using RxCallback = void (*)(const uint8_t* data, uint16_t len, bool error, void* context);
+  void setRxCallback(RxCallback cb, void* context);
+
   // optional helper
   void reset();
 
@@ -51,4 +54,6 @@ private:
   uint8_t  _local[BYTES_MAX];
   uint16_t _localLen = 0;
   bool     _localErr = false;
+  RxCallback _rxCallback = nullptr;
+  void* _rxCallbackCtx = nullptr;
 };

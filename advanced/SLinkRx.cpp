@@ -41,6 +41,11 @@ uint16_t SLinkRx::length() const { return _localLen; }
 const uint8_t* SLinkRx::data() const { return _local; }
 bool SLinkRx::error() const { return _localErr; }
 
+void SLinkRx::setRxCallback(RxCallback cb, void* context) {
+  _rxCallback = cb;
+  _rxCallbackCtx = context;
+}
+
 bool SLinkRx::poll(uint32_t gap_us) {
   // snapshot shared ISR values
   uint32_t lastEdge;
@@ -80,6 +85,9 @@ bool SLinkRx::poll(uint32_t gap_us) {
   _msgError = false;
   interrupts();
 
+  if (_rxCallback) {
+    _rxCallback(_local, _localLen, _localErr, _rxCallbackCtx);
+  }
   return true;
 }
 
