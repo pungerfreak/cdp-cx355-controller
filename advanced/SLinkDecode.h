@@ -43,9 +43,6 @@ struct SLinkMessage {
   bool    trackSecValid = false;
   uint8_t trackMin = 0;
   uint8_t trackSec = 0;
-  uint8_t extraLen = 0;
-  uint8_t extra[2] = {0, 0};
-
   bool    hasChecksum = false;
   uint8_t checksumLast = 0;
   uint8_t checksumSum = 0;

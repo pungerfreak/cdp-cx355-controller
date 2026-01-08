@@ -26,21 +26,6 @@ void SLinkRx::begin() {
   attachInterrupt(digitalPinToInterrupt(_pin), SLinkRx::isrThunk, FALLING);
 }
 
-void SLinkRx::reset() {
-  noInterrupts();
-  _msgLen = 0;
-  _curByte = 0;
-  _bitCount = 0;
-  _inFrame = false;
-  _msgReady = false;
-  _msgError = false;
-  interrupts();
-}
-
-uint16_t SLinkRx::length() const { return _localLen; }
-const uint8_t* SLinkRx::data() const { return _local; }
-bool SLinkRx::error() const { return _localErr; }
-
 void SLinkRx::setRxCallback(RxCallback cb, void* context) {
   _rxCallback = cb;
   _rxCallbackCtx = context;

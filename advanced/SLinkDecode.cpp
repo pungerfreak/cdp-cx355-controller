@@ -133,13 +133,6 @@ bool SLinkTranslator::decode(const uint8_t* data, uint16_t len, SLinkMessage& ou
       if (out.trackMinValid) out.trackMin = minutes;
       if (out.trackSecValid) out.trackSec = seconds;
     }
-    if (out.len > 6) {
-      uint16_t extraLen = out.len - 6;
-      if (extraLen > 2) extraLen = 2;
-      out.extraLen = (uint8_t)extraLen;
-      out.extra[0] = out.raw[6];
-      if (out.extraLen > 1) out.extra[1] = out.raw[7];
-    }
   }
 
   if (out.len >= 2) {

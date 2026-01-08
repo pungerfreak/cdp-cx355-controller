@@ -11,16 +11,8 @@ public:
   // call from loop(); returns true when a complete message is available
   bool poll(uint32_t gap_us = 5000);
 
-  // after poll() returns true:
-  uint16_t length() const;
-  const uint8_t* data() const;
-  bool error() const;
-
   using RxCallback = void (*)(const uint8_t* data, uint16_t len, bool error, void* context);
   void setRxCallback(RxCallback cb, void* context);
-
-  // optional helper
-  void reset();
 
 private:
   uint8_t _pin;

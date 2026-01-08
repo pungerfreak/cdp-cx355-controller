@@ -8,14 +8,7 @@ void SLinkStateTracker::updateDisc(const SLinkDiscInfo& disc) {
   if (_hasDisc && _currentDisc == disc.disc) return;
   _currentDisc = disc.disc;
   _hasDisc = true;
-  _hasTrack = false;
   _sender.setCurrentDisc(disc.disc);
-}
-
-void SLinkStateTracker::updateTrack(const SLinkTrackInfo& track) {
-  if (!track.present || !track.valid) return;
-  _currentTrack = track.track;
-  _hasTrack = true;
 }
 
 void SLinkStateTracker::play(const SLinkDebugInfo* debug) { (void)debug; }
@@ -62,7 +55,7 @@ void SLinkStateTracker::changingTrack(const SLinkDiscInfo& disc,
                                       const SLinkDebugInfo* debug) {
   (void)debug;
   updateDisc(disc);
-  updateTrack(track);
+  (void)track;
 }
 
 void SLinkStateTracker::unknown(const SLinkDebugInfo* debug) { (void)debug; }

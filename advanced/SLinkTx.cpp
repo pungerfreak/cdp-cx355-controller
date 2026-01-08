@@ -6,16 +6,6 @@ void SLinkTx::begin() {
   pinMode(_pin, INPUT_PULLDOWN);
 }
 
-void SLinkTx::setTimings(uint16_t low0_us, uint16_t low1_us,
-                         uint16_t lowSync_us, uint16_t highGap_us,
-                         uint16_t endGap_us) {
-  _low0Us = low0_us;
-  _low1Us = low1_us;
-  _lowSyncUs = lowSync_us;
-  _highGapUs = highGap_us;
-  _endGapUs = endGap_us;
-}
-
 void SLinkTx::driveLow() {
   pinMode(_pin, OUTPUT);
   digitalWrite(_pin, HIGH);

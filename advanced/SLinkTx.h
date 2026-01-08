@@ -7,9 +7,6 @@ public:
 
   void begin();
   void sendBytes(const uint8_t* data, uint16_t len);
-  void setTimings(uint16_t low0_us, uint16_t low1_us,
-                  uint16_t lowSync_us, uint16_t highGap_us,
-                  uint16_t endGap_us);
 
 private:
   void driveLow();

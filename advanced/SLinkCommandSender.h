@@ -10,10 +10,8 @@ public:
 
   explicit SLinkCommandSender(SLinkTx& tx, uint8_t unit = SLINK_ADDR_CONTROLLER);
 
-  void setUnit(uint8_t unit);
   void setCurrentDisc(uint16_t disc);
   void setTxCallback(TxCallback cb, void* context);
-  bool takeLastFrame(uint8_t* out, uint16_t& len);
   bool play() override;
   bool stop() override;
   bool pause() override;
@@ -29,15 +27,11 @@ private:
   bool encodeDiscRaw(uint16_t disc, uint8_t& raw) const;
   bool encodeDiscUnit(uint16_t disc, uint8_t& unit) const;
   bool encodeBcd(uint8_t value, uint8_t& raw) const;
-  void storeLastFrame(const uint8_t* data, uint16_t len);
 
   SLinkTx& _tx;
   uint8_t _unit;
   uint16_t _currentDisc = 0;
   bool _hasDisc = false;
-  uint8_t _lastFrame[4] = {0};
-  uint16_t _lastLen = 0;
-  bool _lastReady = false;
   TxCallback _txCallback = nullptr;
   void* _txCallbackCtx = nullptr;
 };
