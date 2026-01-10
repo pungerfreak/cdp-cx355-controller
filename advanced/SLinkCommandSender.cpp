@@ -52,7 +52,7 @@ bool SLinkCommandSender::send(const SLinkUnitCommand& cmd) {
   uint16_t len = 0;
   if (!_frameBuilder.build(resolved, frame, len, _unit)) return false;
   if (_txCallback) _txCallback(frame, len, _txCallbackCtx);
-  _tx.sendBytes(frame, len);
+  if (!_tx.sendBytes(frame, len)) return false;
   if (resolved.type == SLinkUnitCommandType::ChangeDisc) {
     setCurrentDisc(resolved.disc);
   }

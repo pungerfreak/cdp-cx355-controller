@@ -3,8 +3,10 @@
 SLinkSystem::SLinkSystem(HardwareSerial& serial)
     : _serial(serial),
       _hardwareSerial(&serial),
-      _slinkRx(kRxPin),
-      _slinkTx(kTxPin),
+      _busState(),
+      _txGate(_busState),
+      _slinkRx(kRxPin, _busState),
+      _slinkTx(kTxPin, _txGate),
       _commandSender(_slinkTx),
       _intentQueue(),
       _intentArbiter(),
@@ -27,8 +29,10 @@ SLinkSystem::SLinkSystem(HardwareSerial& serial)
 
 SLinkSystem::SLinkSystem(Stream& serial)
     : _serial(serial),
-      _slinkRx(kRxPin),
-      _slinkTx(kTxPin),
+      _busState(),
+      _txGate(_busState),
+      _slinkRx(kRxPin, _busState),
+      _slinkTx(kTxPin, _txGate),
       _commandSender(_slinkTx),
       _intentQueue(),
       _intentArbiter(),

@@ -1,12 +1,13 @@
 #pragma once
 #include <Arduino.h>
+#include "SLinkTxGate.h"
 
 class SLinkTx {
 public:
-  explicit SLinkTx(uint8_t pin);
+  explicit SLinkTx(uint8_t pin, SLinkTxGate& gate);
 
   void begin();
-  void sendBytes(const uint8_t* data, uint16_t len);
+  bool sendBytes(const uint8_t* data, uint16_t len);
 
 private:
   void driveLow();
@@ -15,6 +16,7 @@ private:
   void sendBit(bool one);
 
   uint8_t _pin;
+  SLinkTxGate& _txGate;
   uint16_t _low0Us = 600;
   uint16_t _low1Us = 1200;
   uint16_t _lowSyncUs = 2400;

@@ -1,12 +1,13 @@
 #pragma once
 #include <Arduino.h>
+#include "SLinkBusState.h"
 #include "SLinkEdgeCapture.h"
 #include "SLinkFrameAssembler.h"
 #include "SLinkSymbolDecoder.h"
 
 class SLinkRx {
 public:
-  explicit SLinkRx(uint8_t pin);
+  explicit SLinkRx(uint8_t pin, SLinkBusState& bus);
 
   // call from setup()
   void begin();
@@ -19,6 +20,7 @@ public:
 
 private:
   uint8_t _pin;
+  SLinkBusState& _busState;
 
   volatile uint32_t _lastEdgeUs = 0;
   SLinkEdgeCapture _edgeCapture;

@@ -2,7 +2,7 @@
 
 SLinkRx* SLinkRx::_instance = nullptr;
 
-SLinkRx::SLinkRx(uint8_t pin) : _pin(pin) {}
+SLinkRx::SLinkRx(uint8_t pin, SLinkBusState& bus) : _pin(pin), _busState(bus) {}
 
 void SLinkRx::begin() {
   if (_instance && _instance != this) {
@@ -14,6 +14,7 @@ void SLinkRx::begin() {
 
   noInterrupts();
   _lastEdgeUs = 0;
+  _busState.begin();
   _edgeCapture.begin();
   _symbolDecoder.reset();
   _frame.reset();
@@ -65,6 +66,7 @@ void IRAM_ATTR SLinkRx::onEdgeISR() {
   uint32_t now = micros();
   uint32_t dt  = now - _lastEdgeUs;
   _lastEdgeUs = now;
+  _busState.noteRxEdge(now);
   _edgeCapture.recordDelta(dt);
 }
 
