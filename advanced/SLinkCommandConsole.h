@@ -1,12 +1,13 @@
 #pragma once
 #include <Arduino.h>
+#include "SLinkCommandInput.h"
 #include "SLinkCommandIntentSource.h"
 
-class SLinkCommandConsole {
+class SLinkCommandConsole : public SLinkCommandInput {
 public:
   SLinkCommandConsole(Stream& io, SLinkCommandIntentSource& input, bool printTx);
 
-  void poll();
+  void poll() override;
   void handleLine(const char* line);
   void printHelp();
 

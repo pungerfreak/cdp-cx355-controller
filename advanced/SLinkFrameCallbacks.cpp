@@ -4,13 +4,13 @@ SLinkFrameCallbacks::SLinkFrameCallbacks(Stream& io,
                                          SLinkTranslator& translator,
                                          SLinkUnitEventHandler& stateObserver,
                                          SLinkDebugPrinter& debugPrinter,
-                                         SLinkPrettyPrinter& prettyPrinter,
+                                         SLinkUnitEventHandler* outputHandler,
                                          bool debugToSerial)
     : _io(io),
       _translator(translator),
       _stateObserver(stateObserver),
       _debugPrinter(debugPrinter),
-      _prettyPrinter(prettyPrinter),
+      _outputHandler(outputHandler),
       _debugToSerial(debugToSerial) {}
 
 void SLinkFrameCallbacks::onTxFrame(const uint8_t* data, uint16_t len, void* context) {
@@ -22,6 +22,10 @@ void SLinkFrameCallbacks::onRxFrame(const uint8_t* data, uint16_t len,
                                      bool error, void* context) {
   if (!context) return;
   static_cast<SLinkFrameCallbacks*>(context)->handleRx(data, len, error);
+}
+
+void SLinkFrameCallbacks::setOutputHandler(SLinkUnitEventHandler* outputHandler) {
+  _outputHandler = outputHandler;
 }
 
 void SLinkFrameCallbacks::handleTx(const uint8_t* data, uint16_t len) {
@@ -47,8 +51,8 @@ void SLinkFrameCallbacks::handleRx(const uint8_t* data, uint16_t len, bool error
     if (_debugToSerial) {
       _io.print("rx ");
       SLinkDispatcher::dispatch(_rxMessage, _debugPrinter, &debugInfo);
-    } else {
-      SLinkDispatcher::dispatch(_rxMessage, _prettyPrinter, &debugInfo);
+    } else if (_outputHandler != nullptr) {
+      SLinkDispatcher::dispatch(_rxMessage, *_outputHandler, &debugInfo);
     }
   }
 }

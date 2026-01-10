@@ -12,10 +12,10 @@ SLinkSystem::SLinkSystem(HardwareSerial& serial)
       _intentArbiter(),
       _intentAdapter(_intentQueue),
       _intentProcessor(_intentQueue, _intentArbiter, _commandSender),
-      _commandConsole(_serial, _intentAdapter, true),
       _translator(),
       _debugPrinter(_serial),
-      _prettyPrinter(_serial),
+      _commandInput(nullptr),
+      _eventOutput(nullptr),
       _unitStateStore(),
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
@@ -24,7 +24,7 @@ SLinkSystem::SLinkSystem(HardwareSerial& serial)
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
-                       _prettyPrinter,
+                       _eventOutput,
                        kDebugToSerial) {}
 
 SLinkSystem::SLinkSystem(Stream& serial)
@@ -38,10 +38,10 @@ SLinkSystem::SLinkSystem(Stream& serial)
       _intentArbiter(),
       _intentAdapter(_intentQueue),
       _intentProcessor(_intentQueue, _intentArbiter, _commandSender),
-      _commandConsole(_serial, _intentAdapter, true),
       _translator(),
       _debugPrinter(_serial),
-      _prettyPrinter(_serial),
+      _commandInput(nullptr),
+      _eventOutput(nullptr),
       _unitStateStore(),
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
@@ -50,7 +50,7 @@ SLinkSystem::SLinkSystem(Stream& serial)
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
-                       _prettyPrinter,
+                       _eventOutput,
                        kDebugToSerial) {}
 
 void SLinkSystem::begin() {
@@ -66,7 +66,22 @@ void SLinkSystem::begin() {
 }
 
 void SLinkSystem::poll() {
-  _commandConsole.poll();
+  if (_commandInput != nullptr) {
+    _commandInput->poll();
+  }
   _intentProcessor.poll();
   _slinkRx.poll(5000);
+}
+
+void SLinkSystem::attachCommandInput(SLinkCommandInput& input) {
+  _commandInput = &input;
+}
+
+void SLinkSystem::attachEventOutput(SLinkUnitEventHandler& output) {
+  _eventOutput = &output;
+  _frameCallbacks.setOutputHandler(_eventOutput);
+}
+
+SLinkCommandIntentSource& SLinkSystem::intentSource() {
+  return _intentAdapter;
 }

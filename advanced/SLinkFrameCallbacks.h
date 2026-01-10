@@ -2,7 +2,6 @@
 #include <Arduino.h>
 #include "SLinkDebugPrinter.h"
 #include "SLinkUnitEventHandler.h"
-#include "SLinkPrettyPrinter.h"
 
 class SLinkFrameCallbacks {
 public:
@@ -10,11 +9,12 @@ public:
                       SLinkTranslator& translator,
                       SLinkUnitEventHandler& stateObserver,
                       SLinkDebugPrinter& debugPrinter,
-                      SLinkPrettyPrinter& prettyPrinter,
+                      SLinkUnitEventHandler* outputHandler,
                       bool debugToSerial);
 
   static void onTxFrame(const uint8_t* data, uint16_t len, void* context);
   static void onRxFrame(const uint8_t* data, uint16_t len, bool error, void* context);
+  void setOutputHandler(SLinkUnitEventHandler* outputHandler);
 
 private:
   void handleTx(const uint8_t* data, uint16_t len);
@@ -24,7 +24,7 @@ private:
   SLinkTranslator& _translator;
   SLinkUnitEventHandler& _stateObserver;
   SLinkDebugPrinter& _debugPrinter;
-  SLinkPrettyPrinter& _prettyPrinter;
+  SLinkUnitEventHandler* _outputHandler;
   bool _debugToSerial;
   SLinkMessage _rxMessage;
   SLinkMessage _txMessage;
