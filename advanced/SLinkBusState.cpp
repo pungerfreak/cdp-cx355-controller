@@ -42,3 +42,7 @@ uint32_t SLinkBusState::lastActivityUs() const {
 bool SLinkBusState::rxDuringTx() const {
   return _rxDuringTx;
 }
+
+bool SLinkBusState::txActive() const {
+  return _txActive;
+}

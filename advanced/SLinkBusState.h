@@ -12,6 +12,7 @@ public:
   uint32_t lastTxEndUs() const;
   uint32_t lastActivityUs() const;
   bool rxDuringTx() const;
+  bool txActive() const;
 
 private:
   volatile uint32_t _lastRxEdgeUs = 0;
