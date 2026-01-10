@@ -12,6 +12,7 @@ bool SLinkIntentQueue::push(const SLinkCommandIntent& intent) {
 bool SLinkIntentQueue::pop(SLinkCommandIntent& intent) {
   if (isEmpty()) return false;
   intent = _queue[_head];
+  _queuedAt[_head] = 0;
   _head = (uint8_t)((_head + 1) % kMaxIntents);
   _count--;
   return true;
@@ -38,6 +39,7 @@ bool SLinkIntentQueue::removeAt(uint8_t offset,
     _queuedAt[toIndex] = _queuedAt[fromIndex];
   }
   _tail = (uint8_t)((_tail + kMaxIntents - 1) % kMaxIntents);
+  _queuedAt[_tail] = 0;
   _count--;
   return true;
 }

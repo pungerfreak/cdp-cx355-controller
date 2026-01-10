@@ -1,8 +1,5 @@
 #include "SLinkIntentArbiter.h"
 
-SLinkIntentArbiter::SLinkIntentArbiter(uint32_t dedupeWindowMs)
-    : _dedupeWindowMs(dedupeWindowMs) {}
-
 const SLinkIntentArbiter::Policy& SLinkIntentArbiter::policyFor(
     SLinkIntentType type) {
   static const Policy kPolicies[] = {
@@ -23,22 +20,6 @@ const SLinkIntentArbiter::Policy& SLinkIntentArbiter::policyFor(
     return kDefault;
   }
   return kPolicies[index];
-}
-
-bool SLinkIntentArbiter::shouldDispatch(const SLinkCommandIntent& intent) {
-  uint8_t index = static_cast<uint8_t>(intent.type);
-  if (index >= kIntentTypeCount) return true;
-
-  uint32_t now = millis();
-  const Policy& policy = policyFor(intent.type);
-  uint32_t throttleMs = policy.throttleMs > 0 ? policy.throttleMs : _dedupeWindowMs;
-  uint32_t last = _lastDispatchMs[index];
-  if (last != 0 && (now - last) < throttleMs) {
-    return false;
-  }
-
-  _lastDispatchMs[index] = now;
-  return true;
 }
 
 bool SLinkIntentArbiter::selectNext(SLinkIntentQueue& queue,
@@ -66,6 +47,7 @@ bool SLinkIntentArbiter::selectNext(SLinkIntentQueue& queue,
   uint8_t bestOffset = 0;
   bool found = false;
   uint8_t bestPriority = 0;
+  uint32_t bestEnqueuedAt = 0;
 
   for (uint8_t offset = 0; offset < queue.size(); ++offset) {
     SLinkCommandIntent candidate;
@@ -77,9 +59,11 @@ bool SLinkIntentArbiter::selectNext(SLinkIntentQueue& queue,
     if (policy.throttleMs > 0 && last != 0 && (now - last) < policy.throttleMs) {
       continue;
     }
-    if (!found || policy.priority > bestPriority) {
+    if (!found || policy.priority > bestPriority ||
+        (policy.priority == bestPriority && enqueuedAt < bestEnqueuedAt)) {
       found = true;
       bestPriority = policy.priority;
+      bestEnqueuedAt = enqueuedAt;
       bestOffset = offset;
     }
   }

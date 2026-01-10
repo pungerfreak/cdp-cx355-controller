@@ -5,9 +5,8 @@
 
 class SLinkIntentArbiter {
 public:
-  explicit SLinkIntentArbiter(uint32_t dedupeWindowMs = 250);
+  SLinkIntentArbiter() = default;
 
-  bool shouldDispatch(const SLinkCommandIntent& intent);
   bool selectNext(SLinkIntentQueue& queue, SLinkCommandIntent& intent);
 
 private:
@@ -22,5 +21,4 @@ private:
   static const Policy& policyFor(SLinkIntentType type);
 
   uint32_t _lastDispatchMs[kIntentTypeCount] = {};
-  uint32_t _dedupeWindowMs;
 };
