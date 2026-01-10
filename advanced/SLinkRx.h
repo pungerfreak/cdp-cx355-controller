@@ -31,6 +31,7 @@ private:
   volatile uint8_t _edgeTail = 0;
   volatile bool _edgeOverflow = false;
 
+  uint32_t _pendingDelta = 0;
   uint8_t  _curByte = 0;
   uint8_t  _bitCount = 0;
 

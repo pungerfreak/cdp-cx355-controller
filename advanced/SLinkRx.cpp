@@ -14,10 +14,11 @@ void SLinkRx::begin() {
 
   noInterrupts();
   _msgLen = 0;
-  _lastEdgeUs = micros();
+  _lastEdgeUs = 0;
   _edgeHead = 0;
   _edgeTail = 0;
   _edgeOverflow = false;
+  _pendingDelta = 0;
   _curByte = 0;
   _bitCount = 0;
   _inFrame = false;
@@ -128,6 +129,7 @@ void SLinkRx::drainEdgeBuffer() {
   if (overflow) {
     _msgError = true;
     _inFrame = false;
+    _pendingDelta = 0;
   }
 }
 
@@ -137,15 +139,18 @@ void SLinkRx::processEdgeDelta(uint32_t dt) {
   static constexpr uint32_t kBit1MinUs = 1500;
   static constexpr uint32_t kSyncMinUs = 2100;
 
-  if (dt < kGlitchMinUs) {
+  uint32_t total = dt + _pendingDelta;
+  if (total < kGlitchMinUs) {
+    _pendingDelta = total;
     return;
   }
+  _pendingDelta = 0;
 
   // ignore first edge after boot / reset
-  if (dt == 0) return;
+  if (total == 0) return;
 
   // thresholds for edge-to-edge classification
-  if (dt >= kSyncMinUs) {
+  if (total >= kSyncMinUs) {
     if (_inFrame && (_bitCount % 8) != 0) _msgError = true;
     resetFrame();
     return;
@@ -153,9 +158,9 @@ void SLinkRx::processEdgeDelta(uint32_t dt) {
 
   if (!_inFrame) return;
 
-  if (dt >= kBit1MinUs) {
+  if (total >= kBit1MinUs) {
     pushBit(1);
-  } else if (dt >= kBit0MinUs) {
+  } else if (total >= kBit0MinUs) {
     pushBit(0);
   } else {
     _msgError = true;
