@@ -7,10 +7,8 @@ SLinkIntentProcessor::SLinkIntentProcessor(SLinkIntentQueue& queue,
 
 void SLinkIntentProcessor::poll() {
   SLinkCommandIntent intent;
-  while (_queue.pop(intent)) {
-    if (_arbiter.shouldDispatch(intent)) {
-      dispatch(intent);
-    }
+  while (_arbiter.selectNext(_queue, intent)) {
+    dispatch(intent);
   }
 }
 
