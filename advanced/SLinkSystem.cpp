@@ -20,7 +20,7 @@ SLinkSystem::SLinkSystem(HardwareSerial& serial)
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
       _senderStateSync(_commandSender),
-      _serialCallbacks(_serial,
+      _frameCallbacks(_serial,
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
@@ -46,7 +46,7 @@ SLinkSystem::SLinkSystem(Stream& serial)
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
       _senderStateSync(_commandSender),
-      _serialCallbacks(_serial,
+      _frameCallbacks(_serial,
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
@@ -59,8 +59,8 @@ void SLinkSystem::begin() {
   }
   _unitEventBus.addObserver(_unitStateStore);
   _unitEventBus.addObserver(_senderStateSync);
-  _commandSender.setTxCallback(SLinkSerialCallbacks::onTxFrame, &_serialCallbacks);
-  _slinkRx.setRxCallback(SLinkSerialCallbacks::onRxFrame, &_serialCallbacks);
+  _commandSender.setTxCallback(SLinkFrameCallbacks::onTxFrame, &_frameCallbacks);
+  _slinkRx.setRxCallback(SLinkFrameCallbacks::onRxFrame, &_frameCallbacks);
   _slinkRx.begin();
   _slinkTx.begin();
 }

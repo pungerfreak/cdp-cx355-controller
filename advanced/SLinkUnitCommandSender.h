@@ -1,15 +1,16 @@
 #pragma once
 #include <Arduino.h>
-#include "SLinkInputInterface.h"
+#include "SLinkCommandIntentSource.h"
 #include "SLinkTx.h"
 #include "SLinkFrameBuilder.h"
 #include "SLinkUnitCommand.h"
 
-class SLinkCommandSender : public SLinkInputInterface {
+class SLinkUnitCommandSender : public SLinkCommandIntentSource {
 public:
   using TxCallback = void (*)(const uint8_t* data, uint16_t len, void* context);
 
-  explicit SLinkCommandSender(SLinkTx& tx, uint8_t unit = SLINK_ADDR_CONTROLLER);
+  explicit SLinkUnitCommandSender(SLinkTx& tx,
+                                  uint8_t unit = SLINK_ADDR_CONTROLLER);
 
   void setCurrentDisc(uint16_t disc);
   void setTxCallback(TxCallback cb, void* context);

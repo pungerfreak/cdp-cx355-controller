@@ -1,17 +1,17 @@
 #pragma once
 #include <Arduino.h>
 #include "SLinkDebugPrinter.h"
-#include "SLinkInterface.h"
+#include "SLinkUnitEventHandler.h"
 #include "SLinkPrettyPrinter.h"
 
-class SLinkSerialCallbacks {
+class SLinkFrameCallbacks {
 public:
-  SLinkSerialCallbacks(Stream& io,
-                       SLinkTranslator& translator,
-                       SLinkInterface& stateObserver,
-                       SLinkDebugPrinter& debugPrinter,
-                       SLinkPrettyPrinter& prettyPrinter,
-                       bool debugToSerial);
+  SLinkFrameCallbacks(Stream& io,
+                      SLinkTranslator& translator,
+                      SLinkUnitEventHandler& stateObserver,
+                      SLinkDebugPrinter& debugPrinter,
+                      SLinkPrettyPrinter& prettyPrinter,
+                      bool debugToSerial);
 
   static void onTxFrame(const uint8_t* data, uint16_t len, void* context);
   static void onRxFrame(const uint8_t* data, uint16_t len, bool error, void* context);
@@ -22,7 +22,7 @@ private:
 
   Stream& _io;
   SLinkTranslator& _translator;
-  SLinkInterface& _stateObserver;
+  SLinkUnitEventHandler& _stateObserver;
   SLinkDebugPrinter& _debugPrinter;
   SLinkPrettyPrinter& _prettyPrinter;
   bool _debugToSerial;

@@ -1,8 +1,8 @@
 #pragma once
 #include <Arduino.h>
-#include "SLinkInterface.h"
+#include "SLinkUnitEventHandler.h"
 
-class SLinkDebugPrinter : public SLinkInterface {
+class SLinkDebugPrinter : public SLinkUnitEventHandler {
 public:
   explicit SLinkDebugPrinter(Stream& out);
 

@@ -1,11 +1,11 @@
-#include "SLinkSerialCallbacks.h"
+#include "SLinkFrameCallbacks.h"
 
-SLinkSerialCallbacks::SLinkSerialCallbacks(Stream& io,
-                                           SLinkTranslator& translator,
-                                           SLinkInterface& stateObserver,
-                                           SLinkDebugPrinter& debugPrinter,
-                                           SLinkPrettyPrinter& prettyPrinter,
-                                           bool debugToSerial)
+SLinkFrameCallbacks::SLinkFrameCallbacks(Stream& io,
+                                         SLinkTranslator& translator,
+                                         SLinkUnitEventHandler& stateObserver,
+                                         SLinkDebugPrinter& debugPrinter,
+                                         SLinkPrettyPrinter& prettyPrinter,
+                                         bool debugToSerial)
     : _io(io),
       _translator(translator),
       _stateObserver(stateObserver),
@@ -13,18 +13,18 @@ SLinkSerialCallbacks::SLinkSerialCallbacks(Stream& io,
       _prettyPrinter(prettyPrinter),
       _debugToSerial(debugToSerial) {}
 
-void SLinkSerialCallbacks::onTxFrame(const uint8_t* data, uint16_t len, void* context) {
+void SLinkFrameCallbacks::onTxFrame(const uint8_t* data, uint16_t len, void* context) {
   if (!context) return;
-  static_cast<SLinkSerialCallbacks*>(context)->handleTx(data, len);
+  static_cast<SLinkFrameCallbacks*>(context)->handleTx(data, len);
 }
 
-void SLinkSerialCallbacks::onRxFrame(const uint8_t* data, uint16_t len,
+void SLinkFrameCallbacks::onRxFrame(const uint8_t* data, uint16_t len,
                                      bool error, void* context) {
   if (!context) return;
-  static_cast<SLinkSerialCallbacks*>(context)->handleRx(data, len, error);
+  static_cast<SLinkFrameCallbacks*>(context)->handleRx(data, len, error);
 }
 
-void SLinkSerialCallbacks::handleTx(const uint8_t* data, uint16_t len) {
+void SLinkFrameCallbacks::handleTx(const uint8_t* data, uint16_t len) {
   if (!_debugToSerial) return;
   if (!data || len == 0) return;
   if (_translator.decode(data, len, _txMessage, true)) {
@@ -35,7 +35,7 @@ void SLinkSerialCallbacks::handleTx(const uint8_t* data, uint16_t len) {
   }
 }
 
-void SLinkSerialCallbacks::handleRx(const uint8_t* data, uint16_t len, bool error) {
+void SLinkFrameCallbacks::handleRx(const uint8_t* data, uint16_t len, bool error) {
   if (error) {
     if (_debugToSerial) _io.println("frame error");
     return;

@@ -1,13 +1,15 @@
-#include "SLinkUnitStateStore.h"
+#include "SLinkCommandSenderStateSync.h"
 
-void SLinkUnitStateStore::updateDisc(const SLinkDiscInfo& disc) {
+SLinkCommandSenderStateSync::SLinkCommandSenderStateSync(
+    SLinkUnitCommandSender& sender)
+    : _sender(sender) {}
+
+void SLinkCommandSenderStateSync::updateDisc(const SLinkDiscInfo& disc) {
   if (!disc.present || !disc.valid) return;
-  if (_hasDisc && _currentDisc == disc.disc) return;
-  _currentDisc = disc.disc;
-  _hasDisc = true;
+  _sender.setCurrentDisc(disc.disc);
 }
 
-void SLinkUnitStateStore::onUnitEvent(const SLinkUnitEvent& event) {
+void SLinkCommandSenderStateSync::onUnitEvent(const SLinkUnitEvent& event) {
   switch (event.type) {
     case SLinkUnitEventType::DiscChanged:
     case SLinkUnitEventType::TrackChanged:
@@ -20,12 +22,4 @@ void SLinkUnitStateStore::onUnitEvent(const SLinkUnitEvent& event) {
     case SLinkUnitEventType::Unknown:
       break;
   }
-}
-
-bool SLinkUnitStateStore::hasDisc() const {
-  return _hasDisc;
-}
-
-uint16_t SLinkUnitStateStore::currentDisc() const {
-  return _currentDisc;
 }
