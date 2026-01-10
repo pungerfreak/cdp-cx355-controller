@@ -1,6 +1,7 @@
 #pragma once
 #include "SLinkCommandSender.h"
 #include "SLinkIntentQueue.h"
+#include "SLinkUnitCommand.h"
 
 class SLinkIntentProcessor {
 public:

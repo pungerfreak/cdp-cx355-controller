@@ -1,5 +1,4 @@
 #include "SLinkCommandSender.h"
-#include <string.h>
 
 SLinkCommandSender::SLinkCommandSender(SLinkTx& tx, uint8_t unit)
     : _tx(tx), _unit(unit) {}
@@ -16,97 +15,68 @@ void SLinkCommandSender::setTxCallback(TxCallback cb, void* context) {
 }
 
 bool SLinkCommandSender::play() {
-  return sendCommand(PLAY);
+  return sendSimple(SLinkUnitCommandType::Play);
 }
 
 bool SLinkCommandSender::stop() {
-  return sendCommand(STOP);
+  return sendSimple(SLinkUnitCommandType::Stop);
 }
 
 bool SLinkCommandSender::pause() {
-  return sendCommand(PAUSE);
+  return sendSimple(SLinkUnitCommandType::Pause);
 }
 
 bool SLinkCommandSender::powerOn() {
-  return sendCommand(POWER_ON);
+  return sendSimple(SLinkUnitCommandType::PowerOn);
 }
 
 bool SLinkCommandSender::powerOff() {
-  return sendCommand(POWER_OFF);
+  return sendSimple(SLinkUnitCommandType::PowerOff);
 }
 
 bool SLinkCommandSender::changeDisc(uint16_t disc) {
-  if (!sendChange(disc, 1)) return false;
-  setCurrentDisc(disc);
-  return true;
+  SLinkUnitCommand cmd{SLinkUnitCommandType::ChangeDisc, disc, 1};
+  return send(cmd);
 }
 
 bool SLinkCommandSender::changeTrack(uint8_t track) {
-  if (!_hasDisc) return false;
-  if (track == 0) return false;
-  return sendChange(_currentDisc, track);
+  SLinkUnitCommand cmd{SLinkUnitCommandType::ChangeTrack, 0, track};
+  return send(cmd);
 }
 
-bool SLinkCommandSender::sendCommand(SLinkCommandId id) {
-  SLinkCommand cmd = {_unit, id};
-  return sendCommand(cmd);
-}
+bool SLinkCommandSender::send(const SLinkUnitCommand& cmd) {
+  SLinkUnitCommand resolved = cmd;
+  if (!resolveChange(resolved)) return false;
 
-bool SLinkCommandSender::sendCommand(const SLinkCommand& cmd) {
-  uint8_t frame[2];
-  encodeCommand(cmd, frame);
-  if (_txCallback) _txCallback(frame, sizeof(frame), _txCallbackCtx);
-  _tx.sendBytes(frame, sizeof(frame));
+  uint8_t frame[4] = {};
+  uint16_t len = 0;
+  if (!_frameBuilder.build(resolved, frame, len, _unit)) return false;
+  if (_txCallback) _txCallback(frame, len, _txCallbackCtx);
+  _tx.sendBytes(frame, len);
+  if (resolved.type == SLinkUnitCommandType::ChangeDisc) {
+    setCurrentDisc(resolved.disc);
+  }
   return true;
 }
 
-bool SLinkCommandSender::sendChange(uint16_t disc, uint8_t track) {
-  static constexpr uint8_t kCmdChangeTrack = 0x50;
-  uint8_t unit = 0;
-  uint8_t discRaw = 0;
-  uint8_t trackRaw = 0;
-  if (!encodeDiscUnit(disc, unit)) return false;
-  if (!encodeDiscRaw(disc, discRaw)) return false;
-  if (!encodeBcd(track, trackRaw)) return false;
-
-  uint8_t frame[4] = {unit, kCmdChangeTrack, discRaw, trackRaw};
-  if (_txCallback) _txCallback(frame, sizeof(frame), _txCallbackCtx);
-  _tx.sendBytes(frame, sizeof(frame));
-  return true;
+bool SLinkCommandSender::sendSimple(SLinkUnitCommandType type) {
+  SLinkUnitCommand cmd{type, 0, 0};
+  return send(cmd);
 }
 
-bool SLinkCommandSender::encodeDiscRaw(uint16_t disc, uint8_t& raw) const {
-  if (disc >= 1 && disc <= 99) {
-    uint8_t bcd = 0;
-    if (!encodeBcd((uint8_t)disc, bcd)) return false;
-    raw = bcd;
+bool SLinkCommandSender::resolveChange(SLinkUnitCommand& cmd) const {
+  if (cmd.type == SLinkUnitCommandType::ChangeDisc) {
+    if (cmd.disc == 0) return false;
+    if (cmd.track == 0) cmd.track = 1;
     return true;
   }
-  if (disc >= 100 && disc <= 200) {
-    raw = (uint8_t)(disc + 0x36);
+  if (cmd.type == SLinkUnitCommandType::ChangeTrack) {
+    if (cmd.track == 0) return false;
+    if (cmd.disc == 0) {
+      if (!_hasDisc) return false;
+      cmd.disc = _currentDisc;
+    }
     return true;
   }
-  if (disc >= 201 && disc <= 300) {
-    raw = (uint8_t)(disc - 200);
-    return true;
-  }
-  return false;
-}
-
-bool SLinkCommandSender::encodeDiscUnit(uint16_t disc, uint8_t& unit) const {
-  if (disc >= 1 && disc <= 200) {
-    unit = 0x90;
-    return true;
-  }
-  if (disc >= 201 && disc <= 300) {
-    unit = 0x93;
-    return true;
-  }
-  return false;
-}
-
-bool SLinkCommandSender::encodeBcd(uint8_t value, uint8_t& raw) const {
-  if (value > 99) return false;
-  raw = (uint8_t)(((value / 10) << 4) | (value % 10));
   return true;
 }

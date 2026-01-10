@@ -1,8 +1,9 @@
 #pragma once
 #include <Arduino.h>
 #include "SLinkInputInterface.h"
-#include "SLinkCommands.h"
 #include "SLinkTx.h"
+#include "SLinkFrameBuilder.h"
+#include "SLinkUnitCommand.h"
 
 class SLinkCommandSender : public SLinkInputInterface {
 public:
@@ -12,6 +13,7 @@ public:
 
   void setCurrentDisc(uint16_t disc);
   void setTxCallback(TxCallback cb, void* context);
+  bool send(const SLinkUnitCommand& cmd);
   bool play() override;
   bool stop() override;
   bool pause() override;
@@ -21,14 +23,11 @@ public:
   bool changeTrack(uint8_t track) override;
 
 private:
-  bool sendCommand(SLinkCommandId id);
-  bool sendCommand(const SLinkCommand& cmd);
-  bool sendChange(uint16_t disc, uint8_t track);
-  bool encodeDiscRaw(uint16_t disc, uint8_t& raw) const;
-  bool encodeDiscUnit(uint16_t disc, uint8_t& unit) const;
-  bool encodeBcd(uint8_t value, uint8_t& raw) const;
+  bool sendSimple(SLinkUnitCommandType type);
+  bool resolveChange(SLinkUnitCommand& cmd) const;
 
   SLinkTx& _tx;
+  SLinkFrameBuilder _frameBuilder;
   uint8_t _unit;
   uint16_t _currentDisc = 0;
   bool _hasDisc = false;

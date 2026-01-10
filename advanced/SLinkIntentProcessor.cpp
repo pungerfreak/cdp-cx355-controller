@@ -12,27 +12,31 @@ void SLinkIntentProcessor::poll() {
 }
 
 void SLinkIntentProcessor::dispatch(const SLinkCommandIntent& intent) {
+  SLinkUnitCommand cmd{SLinkUnitCommandType::Play, 0, 0};
   switch (intent.type) {
     case SLinkIntentType::Play:
-      _sender.play();
+      cmd.type = SLinkUnitCommandType::Play;
       break;
     case SLinkIntentType::Stop:
-      _sender.stop();
+      cmd.type = SLinkUnitCommandType::Stop;
       break;
     case SLinkIntentType::Pause:
-      _sender.pause();
+      cmd.type = SLinkUnitCommandType::Pause;
       break;
     case SLinkIntentType::PowerOn:
-      _sender.powerOn();
+      cmd.type = SLinkUnitCommandType::PowerOn;
       break;
     case SLinkIntentType::PowerOff:
-      _sender.powerOff();
+      cmd.type = SLinkUnitCommandType::PowerOff;
       break;
     case SLinkIntentType::ChangeDisc:
-      _sender.changeDisc(intent.disc);
+      cmd.type = SLinkUnitCommandType::ChangeDisc;
+      cmd.disc = intent.disc;
       break;
     case SLinkIntentType::ChangeTrack:
-      _sender.changeTrack(intent.track);
+      cmd.type = SLinkUnitCommandType::ChangeTrack;
+      cmd.track = intent.track;
       break;
   }
+  _sender.send(cmd);
 }
