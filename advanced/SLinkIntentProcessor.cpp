@@ -2,7 +2,7 @@
 
 SLinkIntentProcessor::SLinkIntentProcessor(SLinkIntentQueue& queue,
                                            SLinkIntentArbiter& arbiter,
-                                           SLinkCommandSender& sender)
+                                           SLinkUnitCommandSender& sender)
     : _queue(queue), _arbiter(arbiter), _sender(sender) {}
 
 void SLinkIntentProcessor::poll() {

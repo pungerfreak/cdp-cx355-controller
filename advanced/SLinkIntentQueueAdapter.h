@@ -1,10 +1,10 @@
 #pragma once
-#include "SLinkInputInterface.h"
+#include "SLinkCommandIntentSource.h"
 #include "SLinkIntentQueue.h"
 
-class SLinkIntentAdapter : public SLinkInputInterface {
+class SLinkIntentQueueAdapter : public SLinkCommandIntentSource {
 public:
-  explicit SLinkIntentAdapter(SLinkIntentQueue& queue);
+  explicit SLinkIntentQueueAdapter(SLinkIntentQueue& queue);
 
   bool play() override;
   bool stop() override;

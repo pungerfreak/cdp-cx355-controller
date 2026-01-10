@@ -1,5 +1,5 @@
 #pragma once
-#include "SLinkCommandSender.h"
+#include "SLinkUnitCommandSender.h"
 #include "SLinkIntentArbiter.h"
 #include "SLinkIntentQueue.h"
 #include "SLinkUnitCommand.h"
@@ -8,7 +8,7 @@ class SLinkIntentProcessor {
 public:
   SLinkIntentProcessor(SLinkIntentQueue& queue,
                        SLinkIntentArbiter& arbiter,
-                       SLinkCommandSender& sender);
+                       SLinkUnitCommandSender& sender);
 
   void poll();
 
@@ -17,5 +17,5 @@ private:
 
   SLinkIntentQueue& _queue;
   SLinkIntentArbiter& _arbiter;
-  SLinkCommandSender& _sender;
+  SLinkUnitCommandSender& _sender;
 };

@@ -1,10 +1,10 @@
 #pragma once
 #include <Arduino.h>
-#include "SLinkInputInterface.h"
+#include "SLinkCommandIntentSource.h"
 
 class SLinkCommandConsole {
 public:
-  SLinkCommandConsole(Stream& io, SLinkInputInterface& input, bool printTx);
+  SLinkCommandConsole(Stream& io, SLinkCommandIntentSource& input, bool printTx);
 
   void poll();
   void handleLine(const char* line);
@@ -24,7 +24,7 @@ private:
   void printTx(const char* label, uint16_t value);
 
   Stream& _io;
-  SLinkInputInterface& _input;
+  SLinkCommandIntentSource& _input;
   bool _printTx = true;
   char _buf[kBufferSize];
   uint8_t _len = 0;

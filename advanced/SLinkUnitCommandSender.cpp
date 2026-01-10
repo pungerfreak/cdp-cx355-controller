@@ -1,50 +1,50 @@
-#include "SLinkCommandSender.h"
+#include "SLinkUnitCommandSender.h"
 
-SLinkCommandSender::SLinkCommandSender(SLinkTx& tx, uint8_t unit)
+SLinkUnitCommandSender::SLinkUnitCommandSender(SLinkTx& tx, uint8_t unit)
     : _tx(tx), _unit(unit) {}
 
-void SLinkCommandSender::setCurrentDisc(uint16_t disc) {
+void SLinkUnitCommandSender::setCurrentDisc(uint16_t disc) {
   if (disc == 0 || disc > 300) return;
   _currentDisc = disc;
   _hasDisc = true;
 }
 
-void SLinkCommandSender::setTxCallback(TxCallback cb, void* context) {
+void SLinkUnitCommandSender::setTxCallback(TxCallback cb, void* context) {
   _txCallback = cb;
   _txCallbackCtx = context;
 }
 
-bool SLinkCommandSender::play() {
+bool SLinkUnitCommandSender::play() {
   return sendSimple(SLinkUnitCommandType::Play);
 }
 
-bool SLinkCommandSender::stop() {
+bool SLinkUnitCommandSender::stop() {
   return sendSimple(SLinkUnitCommandType::Stop);
 }
 
-bool SLinkCommandSender::pause() {
+bool SLinkUnitCommandSender::pause() {
   return sendSimple(SLinkUnitCommandType::Pause);
 }
 
-bool SLinkCommandSender::powerOn() {
+bool SLinkUnitCommandSender::powerOn() {
   return sendSimple(SLinkUnitCommandType::PowerOn);
 }
 
-bool SLinkCommandSender::powerOff() {
+bool SLinkUnitCommandSender::powerOff() {
   return sendSimple(SLinkUnitCommandType::PowerOff);
 }
 
-bool SLinkCommandSender::changeDisc(uint16_t disc) {
+bool SLinkUnitCommandSender::changeDisc(uint16_t disc) {
   SLinkUnitCommand cmd{SLinkUnitCommandType::ChangeDisc, disc, 1};
   return send(cmd);
 }
 
-bool SLinkCommandSender::changeTrack(uint8_t track) {
+bool SLinkUnitCommandSender::changeTrack(uint8_t track) {
   SLinkUnitCommand cmd{SLinkUnitCommandType::ChangeTrack, 0, track};
   return send(cmd);
 }
 
-bool SLinkCommandSender::send(const SLinkUnitCommand& cmd) {
+bool SLinkUnitCommandSender::send(const SLinkUnitCommand& cmd) {
   SLinkUnitCommand resolved = cmd;
   if (!resolveChange(resolved)) return false;
 
@@ -59,12 +59,12 @@ bool SLinkCommandSender::send(const SLinkUnitCommand& cmd) {
   return true;
 }
 
-bool SLinkCommandSender::sendSimple(SLinkUnitCommandType type) {
+bool SLinkUnitCommandSender::sendSimple(SLinkUnitCommandType type) {
   SLinkUnitCommand cmd{type, 0, 0};
   return send(cmd);
 }
 
-bool SLinkCommandSender::resolveChange(SLinkUnitCommand& cmd) const {
+bool SLinkUnitCommandSender::resolveChange(SLinkUnitCommand& cmd) const {
   if (cmd.type == SLinkUnitCommandType::ChangeDisc) {
     if (cmd.disc == 0) return false;
     if (cmd.track == 0) cmd.track = 1;

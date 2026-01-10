@@ -1,21 +1,14 @@
 #pragma once
 #include <Arduino.h>
-#include "SLinkInterface.h"
+#include "SLinkUnitEventHandler.h"
 
 enum class SLinkUnitEventType : uint8_t {
-  Play,
-  Stop,
-  Pause,
-  PowerOn,
-  PowerOff,
-  ChangeDisc,
-  ChangeTrack,
-  Ready,
-  ChangingDisc,
-  DiscReady,
-  DiscLoaded,
-  LoadingDisc,
-  ChangingTrack,
+  TransportStateChanged,
+  DiscChanged,
+  TrackChanged,
+  TimeUpdated,
+  Error,
+  FrameRx,
   Unknown
 };
 

@@ -38,9 +38,9 @@ struct SLinkTrackInfo {
   uint8_t secRaw = 0;
 };
 
-class SLinkInterface {
+class SLinkUnitEventHandler {
 public:
-  virtual ~SLinkInterface() = default;
+  virtual ~SLinkUnitEventHandler() = default;
 
   virtual void play(const SLinkDebugInfo* debug) = 0;
   virtual void stop(const SLinkDebugInfo* debug) = 0;
@@ -66,6 +66,6 @@ class SLinkDispatcher {
 public:
   static SLinkDebugInfo buildDebugInfo(const SLinkMessage& msg);
   static void dispatch(const SLinkMessage& msg,
-                       SLinkInterface& iface,
+                       SLinkUnitEventHandler& iface,
                        const SLinkDebugInfo* debug);
 };

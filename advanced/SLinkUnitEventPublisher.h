@@ -1,8 +1,8 @@
 #pragma once
-#include "SLinkInterface.h"
+#include "SLinkUnitEventHandler.h"
 #include "SLinkUnitEventBus.h"
 
-class SLinkUnitEventPublisher : public SLinkInterface {
+class SLinkUnitEventPublisher : public SLinkUnitEventHandler {
 public:
   explicit SLinkUnitEventPublisher(SLinkUnitEventBus& bus);
 

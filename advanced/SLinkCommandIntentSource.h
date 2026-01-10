@@ -1,9 +1,9 @@
 #pragma once
 #include <Arduino.h>
 
-class SLinkInputInterface {
+class SLinkCommandIntentSource {
 public:
-  virtual ~SLinkInputInterface() = default;
+  virtual ~SLinkCommandIntentSource() = default;
 
   virtual bool play() = 0;
   virtual bool stop() = 0;

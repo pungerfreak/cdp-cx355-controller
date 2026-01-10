@@ -1,4 +1,4 @@
-#include "SLinkInterface.h"
+#include "SLinkUnitEventHandler.h"
 #include <string.h>
 
 namespace {
@@ -51,7 +51,7 @@ SLinkDebugInfo SLinkDispatcher::buildDebugInfo(const SLinkMessage& msg) {
 }
 
 void SLinkDispatcher::dispatch(const SLinkMessage& msg,
-                               SLinkInterface& iface,
+                               SLinkUnitEventHandler& iface,
                                const SLinkDebugInfo* debug) {
   if (!msg.len) return;
 

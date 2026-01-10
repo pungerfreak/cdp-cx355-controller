@@ -1,7 +1,9 @@
 #include "SLinkCommandConsole.h"
 #include <string.h>
 
-SLinkCommandConsole::SLinkCommandConsole(Stream& io, SLinkInputInterface& input, bool printTx)
+SLinkCommandConsole::SLinkCommandConsole(Stream& io,
+                                         SLinkCommandIntentSource& input,
+                                         bool printTx)
     : _io(io), _input(input), _printTx(printTx) {}
 
 void SLinkCommandConsole::printHelp() {
