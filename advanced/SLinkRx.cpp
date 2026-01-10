@@ -13,15 +13,11 @@ void SLinkRx::begin() {
   pinMode(_pin, INPUT);
 
   noInterrupts();
-  _msgLen = 0;
   _lastEdgeUs = 0;
   _edgeCapture.begin();
-  _pendingDelta = 0;
-  _curByte = 0;
-  _bitCount = 0;
-  _inFrame = false;
+  _symbolDecoder.reset();
+  _frame.reset();
   _msgReady = false;
-  _msgError = false;
   interrupts();
 
   attachInterrupt(digitalPinToInterrupt(_pin), SLinkRx::isrThunk, FALLING);
@@ -41,26 +37,19 @@ bool SLinkRx::poll(uint32_t gap_us) {
   interrupts();
 
   // declare ready after a gap
-  if (!_msgReady && _inFrame && (micros() - lastEdge) > gap_us) {
+  if (!_msgReady && _frame.inFrame() && (micros() - lastEdge) > gap_us) {
     _msgReady = true;
   }
 
   if (!_msgReady) return false;
 
-  uint16_t n = _msgLen;
-  if (n > BYTES_MAX) n = BYTES_MAX;
-  memcpy(_local, _msg, n);
-  _localLen = n;
+  _frame.copyMessage(_local, SLinkFrameAssembler::BYTES_MAX, _localLen);
+  _localErr = _frame.hasError() || ((_frame.bitCount() % 8) != 0);
 
-  _localErr = _msgError || ((_bitCount % 8) != 0);
-
-  // reset ISR state for next frame
+  // reset state for next frame
   _msgReady = false;
-  _inFrame = false;
-  _msgLen = 0;
-  _bitCount = 0;
-  _curByte = 0;
-  _msgError = false;
+  _frame.reset();
+  _symbolDecoder.reset();
 
   if (_rxCallback) {
     _rxCallback(_local, _localLen, _localErr, _rxCallbackCtx);
@@ -70,24 +59,6 @@ bool SLinkRx::poll(uint32_t gap_us) {
 
 void IRAM_ATTR SLinkRx::isrThunk() {
   if (_instance) _instance->onEdgeISR();
-}
-
-inline void SLinkRx::resetFrame() {
-  _msgLen = 0;
-  _curByte = 0;
-  _bitCount = 0;
-  _inFrame = true;
-  _msgError = false;
-}
-
-inline void SLinkRx::pushBit(uint8_t b) {
-  _curByte = (uint8_t)((_curByte << 1) | (b & 1));
-  _bitCount++;
-  if ((_bitCount & 7) == 0) {
-    if (_msgLen < BYTES_MAX) _msg[_msgLen++] = _curByte;
-    else _msgError = true;
-    _curByte = 0;
-  }
 }
 
 void IRAM_ATTR SLinkRx::onEdgeISR() {
@@ -110,43 +81,30 @@ void SLinkRx::drainEdgeBuffer() {
   }
 
   if (overflow) {
-    _msgError = true;
-    _inFrame = false;
-    _pendingDelta = 0;
+    _frame.abortWithError();
+    _symbolDecoder.reset();
   }
 }
 
 void SLinkRx::processEdgeDelta(uint32_t dt) {
-  static constexpr uint32_t kGlitchMinUs = 900;
-  static constexpr uint32_t kBit0MinUs = 900;
-  static constexpr uint32_t kBit1MinUs = 1500;
-  static constexpr uint32_t kSyncMinUs = 2100;
+  handleSymbol(_symbolDecoder.decodeDelta(dt));
+}
 
-  uint32_t total = dt + _pendingDelta;
-  if (total < kGlitchMinUs) {
-    _pendingDelta = total;
-    return;
-  }
-  _pendingDelta = 0;
-
-  // ignore first edge after boot / reset
-  if (total == 0) return;
-
-  // thresholds for edge-to-edge classification
-  if (total >= kSyncMinUs) {
-    if (_inFrame && (_bitCount % 8) != 0) _msgError = true;
-    resetFrame();
-    return;
-  }
-
-  if (!_inFrame) return;
-
-  if (total >= kBit1MinUs) {
-    pushBit(1);
-  } else if (total >= kBit0MinUs) {
-    pushBit(0);
-  } else {
-    _msgError = true;
-    _inFrame = false; // wait for next sync
+void SLinkRx::handleSymbol(SLinkSymbolDecoder::SymbolType symbol) {
+  switch (symbol) {
+    case SLinkSymbolDecoder::SymbolType::None:
+      return;
+    case SLinkSymbolDecoder::SymbolType::Sync:
+      _frame.onSync();
+      return;
+    case SLinkSymbolDecoder::SymbolType::Bit0:
+      _frame.onBit(0);
+      return;
+    case SLinkSymbolDecoder::SymbolType::Bit1:
+      _frame.onBit(1);
+      return;
+    case SLinkSymbolDecoder::SymbolType::Error:
+      _frame.abortWithError();
+      return;
   }
 }
