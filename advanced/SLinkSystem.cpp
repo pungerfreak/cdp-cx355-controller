@@ -14,8 +14,6 @@ SLinkSystem::SLinkSystem(HardwareSerial& serial)
       _intentProcessor(_intentQueue, _intentArbiter, _commandSender),
       _translator(),
       _debugPrinter(_serial),
-      _commandInput(nullptr),
-      _eventOutput(nullptr),
       _unitStateStore(),
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
@@ -24,7 +22,6 @@ SLinkSystem::SLinkSystem(HardwareSerial& serial)
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
-                       _eventOutput,
                        kDebugToSerial) {}
 
 SLinkSystem::SLinkSystem(Stream& serial)
@@ -40,8 +37,6 @@ SLinkSystem::SLinkSystem(Stream& serial)
       _intentProcessor(_intentQueue, _intentArbiter, _commandSender),
       _translator(),
       _debugPrinter(_serial),
-      _commandInput(nullptr),
-      _eventOutput(nullptr),
       _unitStateStore(),
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
@@ -50,7 +45,6 @@ SLinkSystem::SLinkSystem(Stream& serial)
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
-                       _eventOutput,
                        kDebugToSerial) {}
 
 void SLinkSystem::begin() {
@@ -66,20 +60,33 @@ void SLinkSystem::begin() {
 }
 
 void SLinkSystem::poll() {
-  if (_commandInput != nullptr) {
-    _commandInput->poll();
+  for (uint8_t i = 0; i < _commandInputCount; ++i) {
+    if (_commandInputs[i] != nullptr) {
+      _commandInputs[i]->poll();
+    }
   }
   _intentProcessor.poll();
   _slinkRx.poll(5000);
 }
 
+bool SLinkSystem::addCommandInput(SLinkCommandInput& input) {
+  if (_commandInputCount >= kMaxCommandInputs) return false;
+  _commandInputs[_commandInputCount++] = &input;
+  return true;
+}
+
+bool SLinkSystem::addEventOutput(SLinkUnitEventHandler& output) {
+  if (_eventOutputCount >= kMaxEventOutputs) return false;
+  _eventOutputs[_eventOutputCount++] = &output;
+  return _frameCallbacks.addOutputHandler(output);
+}
+
 void SLinkSystem::attachCommandInput(SLinkCommandInput& input) {
-  _commandInput = &input;
+  addCommandInput(input);
 }
 
 void SLinkSystem::attachEventOutput(SLinkUnitEventHandler& output) {
-  _eventOutput = &output;
-  _frameCallbacks.setOutputHandler(_eventOutput);
+  addEventOutput(output);
 }
 
 SLinkCommandIntentSource& SLinkSystem::intentSource() {

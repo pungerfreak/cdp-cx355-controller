@@ -8,8 +8,8 @@ SLinkPrettyPrinter slinkPrinter(Serial);
 
 void setup() {
   Serial.begin(230400);
-  slinkSystem.attachCommandInput(slinkConsole);
-  slinkSystem.attachEventOutput(slinkPrinter);
+  slinkSystem.addCommandInput(slinkConsole);
+  slinkSystem.addEventOutput(slinkPrinter);
   slinkSystem.begin();
 }
 

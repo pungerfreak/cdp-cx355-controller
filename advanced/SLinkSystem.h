@@ -26,11 +26,15 @@ public:
 
   void begin();
   void poll();
+  bool addCommandInput(SLinkCommandInput& input);
+  bool addEventOutput(SLinkUnitEventHandler& output);
   void attachCommandInput(SLinkCommandInput& input);
   void attachEventOutput(SLinkUnitEventHandler& output);
   SLinkCommandIntentSource& intentSource();
 
 private:
+  static constexpr uint8_t kMaxCommandInputs = 4;
+  static constexpr uint8_t kMaxEventOutputs = 4;
   static constexpr uint8_t kTxPin = 2;
   static constexpr uint8_t kRxPin = 21;
   static constexpr bool kDebugToSerial = true;
@@ -48,8 +52,10 @@ private:
   SLinkIntentProcessor _intentProcessor;
   SLinkTranslator _translator;
   SLinkDebugPrinter _debugPrinter;
-  SLinkCommandInput* _commandInput = nullptr;
-  SLinkUnitEventHandler* _eventOutput = nullptr;
+  SLinkCommandInput* _commandInputs[kMaxCommandInputs] = {};
+  uint8_t _commandInputCount = 0;
+  SLinkUnitEventHandler* _eventOutputs[kMaxEventOutputs] = {};
+  uint8_t _eventOutputCount = 0;
   SLinkUnitStateStore _unitStateStore;
   SLinkUnitEventBus _unitEventBus;
   SLinkUnitEventPublisher _unitEventPublisher;
