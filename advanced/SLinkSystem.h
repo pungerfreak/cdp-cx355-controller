@@ -1,6 +1,6 @@
 #pragma once
 #include <Arduino.h>
-#include "SLinkCommandConsole.h"
+#include "SLinkCommandInput.h"
 #include "SLinkUnitCommandSender.h"
 #include "SLinkDebugPrinter.h"
 #include "SLinkBusState.h"
@@ -8,7 +8,6 @@
 #include "SLinkIntentArbiter.h"
 #include "SLinkIntentProcessor.h"
 #include "SLinkIntentQueue.h"
-#include "SLinkPrettyPrinter.h"
 #include "SLinkRx.h"
 #include "SLinkFrameCallbacks.h"
 #include "SLinkCommandSenderStateSync.h"
@@ -18,6 +17,8 @@
 #include "SLinkUnitEventPublisher.h"
 #include "SLinkUnitStateStore.h"
 
+class SLinkUnitEventHandler;
+
 class SLinkSystem {
 public:
   explicit SLinkSystem(HardwareSerial& serial);
@@ -25,8 +26,15 @@ public:
 
   void begin();
   void poll();
+  bool addCommandInput(SLinkCommandInput& input);
+  bool addEventOutput(SLinkUnitEventHandler& output);
+  void attachCommandInput(SLinkCommandInput& input);
+  void attachEventOutput(SLinkUnitEventHandler& output);
+  SLinkCommandIntentSource& intentSource();
 
 private:
+  static constexpr uint8_t kMaxCommandInputs = 4;
+  static constexpr uint8_t kMaxEventOutputs = 4;
   static constexpr uint8_t kTxPin = 2;
   static constexpr uint8_t kRxPin = 21;
   static constexpr bool kDebugToSerial = true;
@@ -42,10 +50,12 @@ private:
   SLinkIntentArbiter _intentArbiter;
   SLinkIntentQueueAdapter _intentAdapter;
   SLinkIntentProcessor _intentProcessor;
-  SLinkCommandConsole _commandConsole;
   SLinkTranslator _translator;
   SLinkDebugPrinter _debugPrinter;
-  SLinkPrettyPrinter _prettyPrinter;
+  SLinkCommandInput* _commandInputs[kMaxCommandInputs] = {};
+  uint8_t _commandInputCount = 0;
+  SLinkUnitEventHandler* _eventOutputs[kMaxEventOutputs] = {};
+  uint8_t _eventOutputCount = 0;
   SLinkUnitStateStore _unitStateStore;
   SLinkUnitEventBus _unitEventBus;
   SLinkUnitEventPublisher _unitEventPublisher;
