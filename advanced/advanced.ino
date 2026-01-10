@@ -6,7 +6,6 @@
 #include "SLinkIntentProcessor.h"
 #include "SLinkIntentQueue.h"
 #include "SLinkInterface.h"
-#include "SLinkInterfaceFanout.h"
 #include "SLinkPrettyPrinter.h"
 #include "SLinkRx.h"
 #include "SLinkSerialCallbacks.h"
@@ -34,13 +33,11 @@ SLinkUnitStateStore unitStateStore;
 SLinkUnitEventBus unitEventBus;
 SLinkUnitEventPublisher unitEventPublisher(unitEventBus);
 SLinkSenderStateSync senderStateSync(commandSender);
-SLinkInterfaceFanout stateFanout;
-SLinkSerialCallbacks serialCallbacks(Serial, translator, stateFanout, debugPrinter,
+SLinkSerialCallbacks serialCallbacks(Serial, translator, unitEventPublisher, debugPrinter,
                                      prettyPrinter, debugToSerial);
 
 void setup() {
   Serial.begin(230400);
-  stateFanout.add(unitEventPublisher);
   unitEventBus.addObserver(unitStateStore);
   unitEventBus.addObserver(senderStateSync);
   commandSender.setTxCallback(SLinkSerialCallbacks::onTxFrame, &serialCallbacks);
