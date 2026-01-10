@@ -1,6 +1,6 @@
-#include "SLinkCommandConsole.h"
-#include "SLinkPrettyPrinter.h"
-#include "SLinkSystem.h"
+#include "command/SLinkCommandConsole.h"
+#include "debug/SLinkPrettyPrinter.h"
+#include "system/SLinkSystem.h"
 
 SLinkSystem slinkSystem(Serial);
 SLinkCommandConsole slinkConsole(Serial, slinkSystem.intentSource(), true);
