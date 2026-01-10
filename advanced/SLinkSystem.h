@@ -19,6 +19,7 @@
 class SLinkSystem {
 public:
   explicit SLinkSystem(HardwareSerial& serial);
+  explicit SLinkSystem(Stream& serial);
 
   void begin();
   void poll();
@@ -28,7 +29,8 @@ private:
   static constexpr uint8_t kRxPin = 21;
   static constexpr bool kDebugToSerial = true;
 
-  HardwareSerial& _serial;
+  Stream& _serial;
+  HardwareSerial* _hardwareSerial = nullptr;
   SLinkRx _slinkRx;
   SLinkTx _slinkTx;
   SLinkCommandSender _commandSender;
