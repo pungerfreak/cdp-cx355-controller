@@ -2,7 +2,7 @@
 
 SLinkRx* SLinkRx::_instance = nullptr;
 
-SLinkRx::SLinkRx(uint8_t pin) : _pin(pin) {}
+SLinkRx::SLinkRx(uint8_t pin, SLinkBusState& bus) : _pin(pin), _busState(bus) {}
 
 void SLinkRx::begin() {
   if (_instance && _instance != this) {
@@ -13,14 +13,12 @@ void SLinkRx::begin() {
   pinMode(_pin, INPUT);
 
   noInterrupts();
-  _msgLen = 0;
-  _lastSymbolUs = 0;
-  _lastEdgeUs = micros();
-  _curByte = 0;
-  _bitCount = 0;
-  _inFrame = false;
+  _lastEdgeUs = 0;
+  _busState.begin();
+  _edgeCapture.begin();
+  _symbolDecoder.reset();
+  _frame.reset();
   _msgReady = false;
-  _msgError = false;
   interrupts();
 
   attachInterrupt(digitalPinToInterrupt(_pin), SLinkRx::isrThunk, FALLING);
@@ -32,43 +30,27 @@ void SLinkRx::setRxCallback(RxCallback cb, void* context) {
 }
 
 bool SLinkRx::poll(uint32_t gap_us) {
-  // snapshot shared ISR values
-  uint32_t lastEdge;
-  bool inFrame, ready;
+  drainEdgeBuffer();
 
+  uint32_t lastEdge;
   noInterrupts();
   lastEdge = _lastEdgeUs;
-  inFrame  = _inFrame;
-  ready    = _msgReady;
   interrupts();
 
   // declare ready after a gap
-  if (!ready && inFrame && (micros() - lastEdge) > gap_us) {
-    noInterrupts();
+  if (!_msgReady && _frame.inFrame() && (micros() - lastEdge) > gap_us) {
     _msgReady = true;
-    ready = true;
-    interrupts();
   }
 
-  if (!ready) return false;
+  if (!_msgReady) return false;
 
-  // copy out atomically
-  noInterrupts();
-  uint16_t n = _msgLen;
-  if (n > BYTES_MAX) n = BYTES_MAX;
-  memcpy(_local, (const void*)_msg, n);
-  _localLen = n;
+  _frame.copyMessage(_local, SLinkFrameAssembler::BYTES_MAX, _localLen);
+  _localErr = _frame.hasError() || ((_frame.bitCount() % 8) != 0);
 
-  _localErr = _msgError || ((_bitCount % 8) != 0);
-
-  // reset ISR state for next frame
+  // reset state for next frame
   _msgReady = false;
-  _inFrame = false;
-  _msgLen = 0;
-  _bitCount = 0;
-  _curByte = 0;
-  _msgError = false;
-  interrupts();
+  _frame.reset();
+  _symbolDecoder.reset();
 
   if (_rxCallback) {
     _rxCallback(_local, _localLen, _localErr, _rxCallbackCtx);
@@ -80,59 +62,54 @@ void IRAM_ATTR SLinkRx::isrThunk() {
   if (_instance) _instance->onEdgeISR();
 }
 
-inline void IRAM_ATTR SLinkRx::resetFrameISR() {
-  _msgLen = 0;
-  _curByte = 0;
-  _bitCount = 0;
-  _inFrame = true;
-  _msgError = false;
-}
-
-inline void IRAM_ATTR SLinkRx::pushBitISR(uint8_t b) {
-  _curByte = (uint8_t)((_curByte << 1) | (b & 1));
-  _bitCount++;
-  if ((_bitCount & 7) == 0) {
-    if (_msgLen < BYTES_MAX) _msg[_msgLen++] = _curByte;
-    else _msgError = true;
-    _curByte = 0;
-  }
-}
-
 void IRAM_ATTR SLinkRx::onEdgeISR() {
-  static constexpr uint32_t kGlitchMinUs = 900;
-  static constexpr uint32_t kBit0MinUs = 900;
-  static constexpr uint32_t kBit1MinUs = 1500;
-  static constexpr uint32_t kSyncMinUs = 2100;
-
+  if (_busState.txActive()) {
+    return;
+  }
   uint32_t now = micros();
-  uint32_t dt  = now - _lastSymbolUs;
-
-  if (dt < kGlitchMinUs) {
-    return;
-  }
-
-  _lastSymbolUs = now;
+  uint32_t dt  = now - _lastEdgeUs;
   _lastEdgeUs = now;
+  _busState.noteRxEdge(now);
+  _edgeCapture.recordDelta(dt);
+}
 
-  // ignore first edge after boot / reset
-  if (dt == 0) return;
+void SLinkRx::drainEdgeBuffer() {
+  bool overflow = false;
 
-  // thresholds for edge-to-edge classification
-  if (dt >= kSyncMinUs) {
-    if (_inFrame && (_bitCount % 8) != 0) _msgError = true;
-    resetFrameISR();
-    return;
+  while (true) {
+    uint32_t dt = 0;
+    if (!_edgeCapture.popDelta(dt)) {
+      overflow = _edgeCapture.consumeOverflow();
+      break;
+    }
+    processEdgeDelta(dt);
   }
 
-  if (!_inFrame) return;
-
-  if (dt >= kBit1MinUs) {
-    pushBitISR(1);
-  } else if (dt >= kBit0MinUs) {
-    pushBitISR(0);
+  if (overflow) {
+    _frame.abortWithError();
+    _symbolDecoder.reset();
   }
-  else {
-    _msgError = true;
-    _inFrame = false; // wait for next sync
+}
+
+void SLinkRx::processEdgeDelta(uint32_t dt) {
+  handleSymbol(_symbolDecoder.decodeDelta(dt));
+}
+
+void SLinkRx::handleSymbol(SLinkSymbolDecoder::SymbolType symbol) {
+  switch (symbol) {
+    case SLinkSymbolDecoder::SymbolType::None:
+      return;
+    case SLinkSymbolDecoder::SymbolType::Sync:
+      _frame.onSync();
+      return;
+    case SLinkSymbolDecoder::SymbolType::Bit0:
+      _frame.onBit(0);
+      return;
+    case SLinkSymbolDecoder::SymbolType::Bit1:
+      _frame.onBit(1);
+      return;
+    case SLinkSymbolDecoder::SymbolType::Error:
+      _frame.abortWithError();
+      return;
   }
 }

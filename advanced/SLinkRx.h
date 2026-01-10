@@ -1,9 +1,13 @@
 #pragma once
 #include <Arduino.h>
+#include "SLinkBusState.h"
+#include "SLinkEdgeCapture.h"
+#include "SLinkFrameAssembler.h"
+#include "SLinkSymbolDecoder.h"
 
 class SLinkRx {
 public:
-  explicit SLinkRx(uint8_t pin);
+  explicit SLinkRx(uint8_t pin, SLinkBusState& bus);
 
   // call from setup()
   void begin();
@@ -16,22 +20,14 @@ public:
 
 private:
   uint8_t _pin;
+  SLinkBusState& _busState;
 
-  static constexpr uint16_t BYTES_MAX = 64;
-
-  // ISR-shared state
-  volatile uint8_t  _msg[BYTES_MAX];
-  volatile uint16_t _msgLen = 0;
-
-  volatile uint32_t _lastSymbolUs = 0;
   volatile uint32_t _lastEdgeUs = 0;
+  SLinkEdgeCapture _edgeCapture;
+  SLinkSymbolDecoder _symbolDecoder;
+  SLinkFrameAssembler _frame;
 
-  volatile uint8_t  _curByte = 0;
-  volatile uint8_t  _bitCount = 0;
-
-  volatile bool _inFrame = false;
-  volatile bool _msgReady = false;
-  volatile bool _msgError = false;
+  bool _msgReady = false;
 
   // one instance supported (simple + typical for ISR hookup)
   static SLinkRx* _instance;
@@ -39,11 +35,12 @@ private:
   static void IRAM_ATTR isrThunk();
   void IRAM_ATTR onEdgeISR();
 
-  inline void resetFrameISR();
-  inline void pushBitISR(uint8_t b);
+  void drainEdgeBuffer();
+  void processEdgeDelta(uint32_t dt);
+  void handleSymbol(SLinkSymbolDecoder::SymbolType symbol);
 
   // local copy for safe access after poll()
-  uint8_t  _local[BYTES_MAX];
+  uint8_t  _local[SLinkFrameAssembler::BYTES_MAX];
   uint16_t _localLen = 0;
   bool     _localErr = false;
   RxCallback _rxCallback = nullptr;

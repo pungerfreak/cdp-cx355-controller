@@ -3,6 +3,7 @@
 #include "SLinkCommandConsole.h"
 #include "SLinkCommandSender.h"
 #include "SLinkDebugPrinter.h"
+#include "SLinkBusState.h"
 #include "SLinkIntentAdapter.h"
 #include "SLinkIntentArbiter.h"
 #include "SLinkIntentProcessor.h"
@@ -11,6 +12,7 @@
 #include "SLinkRx.h"
 #include "SLinkSerialCallbacks.h"
 #include "SLinkSenderStateSync.h"
+#include "SLinkTxGate.h"
 #include "SLinkTx.h"
 #include "SLinkUnitEventBus.h"
 #include "SLinkUnitEventPublisher.h"
@@ -31,6 +33,8 @@ private:
 
   Stream& _serial;
   HardwareSerial* _hardwareSerial = nullptr;
+  SLinkBusState _busState;
+  SLinkTxGate _txGate;
   SLinkRx _slinkRx;
   SLinkTx _slinkTx;
   SLinkCommandSender _commandSender;
