@@ -2,13 +2,13 @@
 
 SLinkSerialCallbacks::SLinkSerialCallbacks(Stream& io,
                                            SLinkTranslator& translator,
-                                           SLinkStateTracker& stateTracker,
+                                           SLinkInterface& stateObserver,
                                            SLinkDebugPrinter& debugPrinter,
                                            SLinkPrettyPrinter& prettyPrinter,
                                            bool debugToSerial)
     : _io(io),
       _translator(translator),
-      _stateTracker(stateTracker),
+      _stateObserver(stateObserver),
       _debugPrinter(debugPrinter),
       _prettyPrinter(prettyPrinter),
       _debugToSerial(debugToSerial) {}
@@ -43,7 +43,7 @@ void SLinkSerialCallbacks::handleRx(const uint8_t* data, uint16_t len, bool erro
   if (!data || len == 0) return;
   if (_translator.decode(data, len, _rxMessage)) {
     SLinkDebugInfo debugInfo = SLinkDispatcher::buildDebugInfo(_rxMessage);
-    SLinkDispatcher::dispatch(_rxMessage, _stateTracker, &debugInfo);
+    SLinkDispatcher::dispatch(_rxMessage, _stateObserver, &debugInfo);
     if (_debugToSerial) {
       _io.print("rx ");
       SLinkDispatcher::dispatch(_rxMessage, _debugPrinter, &debugInfo);

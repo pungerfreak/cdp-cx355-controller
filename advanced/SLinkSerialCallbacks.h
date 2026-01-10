@@ -3,13 +3,12 @@
 #include "SLinkDebugPrinter.h"
 #include "SLinkInterface.h"
 #include "SLinkPrettyPrinter.h"
-#include "SLinkStateTracker.h"
 
 class SLinkSerialCallbacks {
 public:
   SLinkSerialCallbacks(Stream& io,
                        SLinkTranslator& translator,
-                       SLinkStateTracker& stateTracker,
+                       SLinkInterface& stateObserver,
                        SLinkDebugPrinter& debugPrinter,
                        SLinkPrettyPrinter& prettyPrinter,
                        bool debugToSerial);
@@ -23,7 +22,7 @@ private:
 
   Stream& _io;
   SLinkTranslator& _translator;
-  SLinkStateTracker& _stateTracker;
+  SLinkInterface& _stateObserver;
   SLinkDebugPrinter& _debugPrinter;
   SLinkPrettyPrinter& _prettyPrinter;
   bool _debugToSerial;
