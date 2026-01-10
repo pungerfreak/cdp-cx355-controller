@@ -1,8 +1,9 @@
 #pragma once
 #include "SLinkCommandSender.h"
 #include "SLinkInterface.h"
+#include "SLinkUnitEvents.h"
 
-class SLinkSenderStateSync : public SLinkInterface {
+class SLinkSenderStateSync : public SLinkInterface, public SLinkUnitEventObserver {
 public:
   explicit SLinkSenderStateSync(SLinkCommandSender& sender);
 
@@ -24,6 +25,7 @@ public:
                      const SLinkTrackInfo& track,
                      const SLinkDebugInfo* debug) override;
   void unknown(const SLinkDebugInfo* debug) override;
+  void onUnitEvent(const SLinkUnitEvent& event) override;
 
 private:
   void updateDisc(const SLinkDiscInfo& disc);

@@ -40,9 +40,9 @@ SLinkSerialCallbacks serialCallbacks(Serial, translator, stateFanout, debugPrint
 
 void setup() {
   Serial.begin(230400);
-  stateFanout.add(unitStateStore);
   stateFanout.add(unitEventPublisher);
-  stateFanout.add(senderStateSync);
+  unitEventBus.addObserver(unitStateStore);
+  unitEventBus.addObserver(senderStateSync);
   commandSender.setTxCallback(SLinkSerialCallbacks::onTxFrame, &serialCallbacks);
   slinkRx.setRxCallback(SLinkSerialCallbacks::onRxFrame, &serialCallbacks);
   slinkRx.begin();

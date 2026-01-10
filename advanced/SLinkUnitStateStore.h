@@ -1,7 +1,8 @@
 #pragma once
 #include "SLinkInterface.h"
+#include "SLinkUnitEvents.h"
 
-class SLinkUnitStateStore : public SLinkInterface {
+class SLinkUnitStateStore : public SLinkInterface, public SLinkUnitEventObserver {
 public:
   void play(const SLinkDebugInfo* debug) override;
   void stop(const SLinkDebugInfo* debug) override;
@@ -21,6 +22,7 @@ public:
                      const SLinkTrackInfo& track,
                      const SLinkDebugInfo* debug) override;
   void unknown(const SLinkDebugInfo* debug) override;
+  void onUnitEvent(const SLinkUnitEvent& event) override;
 
   bool hasDisc() const;
   uint16_t currentDisc() const;

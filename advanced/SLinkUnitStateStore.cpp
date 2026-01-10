@@ -57,6 +57,28 @@ void SLinkUnitStateStore::changingTrack(const SLinkDiscInfo& disc,
 
 void SLinkUnitStateStore::unknown(const SLinkDebugInfo* debug) { (void)debug; }
 
+void SLinkUnitStateStore::onUnitEvent(const SLinkUnitEvent& event) {
+  switch (event.type) {
+    case SLinkUnitEventType::DiscReady:
+    case SLinkUnitEventType::ChangingTrack:
+      updateDisc(event.disc);
+      break;
+    case SLinkUnitEventType::ChangeDisc:
+    case SLinkUnitEventType::ChangeTrack:
+    case SLinkUnitEventType::DiscLoaded:
+    case SLinkUnitEventType::LoadingDisc:
+    case SLinkUnitEventType::Play:
+    case SLinkUnitEventType::Stop:
+    case SLinkUnitEventType::Pause:
+    case SLinkUnitEventType::PowerOn:
+    case SLinkUnitEventType::PowerOff:
+    case SLinkUnitEventType::Ready:
+    case SLinkUnitEventType::ChangingDisc:
+    case SLinkUnitEventType::Unknown:
+      break;
+  }
+}
+
 bool SLinkUnitStateStore::hasDisc() const {
   return _hasDisc;
 }
