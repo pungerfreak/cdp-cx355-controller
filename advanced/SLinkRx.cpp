@@ -15,9 +15,7 @@ void SLinkRx::begin() {
   noInterrupts();
   _msgLen = 0;
   _lastEdgeUs = 0;
-  _edgeHead = 0;
-  _edgeTail = 0;
-  _edgeOverflow = false;
+  _edgeCapture.begin();
   _pendingDelta = 0;
   _curByte = 0;
   _bitCount = 0;
@@ -96,15 +94,7 @@ void IRAM_ATTR SLinkRx::onEdgeISR() {
   uint32_t now = micros();
   uint32_t dt  = now - _lastEdgeUs;
   _lastEdgeUs = now;
-
-  uint8_t next = (uint8_t)((_edgeHead + 1) % EDGE_BUFFER_SIZE);
-  if (next == _edgeTail) {
-    _edgeOverflow = true;
-    return;
-  }
-
-  _edgeDeltas[_edgeHead] = dt;
-  _edgeHead = next;
+  _edgeCapture.recordDelta(dt);
 }
 
 void SLinkRx::drainEdgeBuffer() {
@@ -112,17 +102,10 @@ void SLinkRx::drainEdgeBuffer() {
 
   while (true) {
     uint32_t dt = 0;
-    noInterrupts();
-    if (_edgeTail == _edgeHead) {
-      overflow = _edgeOverflow;
-      _edgeOverflow = false;
-      interrupts();
+    if (!_edgeCapture.popDelta(dt)) {
+      overflow = _edgeCapture.consumeOverflow();
       break;
     }
-    dt = _edgeDeltas[_edgeTail];
-    _edgeTail = (uint8_t)((_edgeTail + 1) % EDGE_BUFFER_SIZE);
-    interrupts();
-
     processEdgeDelta(dt);
   }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "SLinkEdgeCapture.h"
 
 class SLinkRx {
 public:
@@ -23,13 +24,8 @@ private:
   uint8_t  _msg[BYTES_MAX];
   uint16_t _msgLen = 0;
 
-  static constexpr uint8_t EDGE_BUFFER_SIZE = 64;
-
   volatile uint32_t _lastEdgeUs = 0;
-  volatile uint32_t _edgeDeltas[EDGE_BUFFER_SIZE];
-  volatile uint8_t _edgeHead = 0;
-  volatile uint8_t _edgeTail = 0;
-  volatile bool _edgeOverflow = false;
+  SLinkEdgeCapture _edgeCapture;
 
   uint32_t _pendingDelta = 0;
   uint8_t  _curByte = 0;
