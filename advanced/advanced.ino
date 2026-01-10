@@ -12,6 +12,8 @@
 #include "SLinkSerialCallbacks.h"
 #include "SLinkSenderStateSync.h"
 #include "SLinkTx.h"
+#include "SLinkUnitEventPublisher.h"
+#include "SLinkUnitEventBus.h"
 #include "SLinkUnitStateStore.h"
 
 const uint8_t TX_PIN         = 2;
@@ -29,6 +31,8 @@ SLinkTranslator translator;
 SLinkDebugPrinter debugPrinter(Serial);
 SLinkPrettyPrinter prettyPrinter(Serial);
 SLinkUnitStateStore unitStateStore;
+SLinkUnitEventBus unitEventBus;
+SLinkUnitEventPublisher unitEventPublisher(unitEventBus);
 SLinkSenderStateSync senderStateSync(commandSender);
 SLinkInterfaceFanout stateFanout;
 SLinkSerialCallbacks serialCallbacks(Serial, translator, stateFanout, debugPrinter,
@@ -37,6 +41,7 @@ SLinkSerialCallbacks serialCallbacks(Serial, translator, stateFanout, debugPrint
 void setup() {
   Serial.begin(230400);
   stateFanout.add(unitStateStore);
+  stateFanout.add(unitEventPublisher);
   stateFanout.add(senderStateSync);
   commandSender.setTxCallback(SLinkSerialCallbacks::onTxFrame, &serialCallbacks);
   slinkRx.setRxCallback(SLinkSerialCallbacks::onRxFrame, &serialCallbacks);
