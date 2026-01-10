@@ -1,13 +1,16 @@
 #include "SLinkIntentProcessor.h"
 
 SLinkIntentProcessor::SLinkIntentProcessor(SLinkIntentQueue& queue,
+                                           SLinkIntentArbiter& arbiter,
                                            SLinkCommandSender& sender)
-    : _queue(queue), _sender(sender) {}
+    : _queue(queue), _arbiter(arbiter), _sender(sender) {}
 
 void SLinkIntentProcessor::poll() {
   SLinkCommandIntent intent;
   while (_queue.pop(intent)) {
-    dispatch(intent);
+    if (_arbiter.shouldDispatch(intent)) {
+      dispatch(intent);
+    }
   }
 }
 

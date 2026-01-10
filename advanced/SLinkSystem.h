@@ -4,6 +4,7 @@
 #include "SLinkCommandSender.h"
 #include "SLinkDebugPrinter.h"
 #include "SLinkIntentAdapter.h"
+#include "SLinkIntentArbiter.h"
 #include "SLinkIntentProcessor.h"
 #include "SLinkIntentQueue.h"
 #include "SLinkPrettyPrinter.h"
@@ -32,6 +33,7 @@ private:
   SLinkTx _slinkTx;
   SLinkCommandSender _commandSender;
   SLinkIntentQueue _intentQueue;
+  SLinkIntentArbiter _intentArbiter;
   SLinkIntentAdapter _intentAdapter;
   SLinkIntentProcessor _intentProcessor;
   SLinkCommandConsole _commandConsole;
