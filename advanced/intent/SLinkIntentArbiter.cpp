@@ -35,18 +35,47 @@ const SLinkIntentArbiter::Policy& SLinkIntentArbiter::policyFor(
   return kPolicies[index];
 }
 
+namespace {
+struct IntentCandidate {
+  uint8_t offset = 0;
+  uint8_t priority = 0;
+  uint32_t enqueuedAt = 0;
+};
+
+bool shouldExpire(uint32_t now,
+                  const SLinkIntentArbiter::Policy& policy,
+                  uint32_t enqueuedAt) {
+  return policy.expireMs > 0 && (now - enqueuedAt) > policy.expireMs;
+}
+
+bool isThrottled(uint32_t now,
+                 const SLinkIntentArbiter::Policy& policy,
+                 uint32_t lastDispatched) {
+  return policy.throttleMs > 0 && lastDispatched != 0 &&
+         (now - lastDispatched) < policy.throttleMs;
+}
+
+bool isBetterCandidate(const IntentCandidate& candidate,
+                       const IntentCandidate& best) {
+  if (candidate.priority != best.priority) {
+    return candidate.priority > best.priority;
+  }
+  return candidate.enqueuedAt < best.enqueuedAt;
+}
+}  // namespace
+
 bool SLinkIntentArbiter::selectNext(SLinkIntentQueue& queue,
                                     SLinkCommandIntent& intent) {
   if (queue.isEmpty()) return false;
 
-  uint32_t now = millis();
+  const uint32_t now = millis();
 
   for (uint8_t offset = 0; offset < queue.size();) {
     SLinkCommandIntent candidate;
     uint32_t enqueuedAt = 0;
     if (!queue.peekAt(offset, candidate, enqueuedAt)) break;
     const Policy& policy = policyFor(candidate.type);
-    if (policy.expireMs > 0 && (now - enqueuedAt) > policy.expireMs) {
+    if (shouldExpire(now, policy, enqueuedAt)) {
       SLinkCommandIntent dropped;
       uint32_t droppedAt = 0;
       queue.removeAt(offset, dropped, droppedAt);
@@ -57,10 +86,8 @@ bool SLinkIntentArbiter::selectNext(SLinkIntentQueue& queue,
 
   if (queue.isEmpty()) return false;
 
-  uint8_t bestOffset = 0;
+  IntentCandidate best;
   bool found = false;
-  uint8_t bestPriority = 0;
-  uint32_t bestEnqueuedAt = 0;
 
   for (uint8_t offset = 0; offset < queue.size(); ++offset) {
     SLinkCommandIntent candidate;
@@ -69,24 +96,21 @@ bool SLinkIntentArbiter::selectNext(SLinkIntentQueue& queue,
     const Policy& policy = policyFor(candidate.type);
     uint8_t index = static_cast<uint8_t>(candidate.type);
     uint32_t last = (index < kIntentTypeCount) ? _lastDispatchMs[index] : 0;
-    if (policy.throttleMs > 0 && last != 0 && (now - last) < policy.throttleMs) {
+    if (isThrottled(now, policy, last)) {
       continue;
     }
-    if (!found || policy.priority > bestPriority ||
-        (policy.priority == bestPriority && enqueuedAt < bestEnqueuedAt)) {
+
+    IntentCandidate scored{offset, policy.priority, enqueuedAt};
+    if (!found || isBetterCandidate(scored, best)) {
+      best = scored;
       found = true;
-      bestPriority = policy.priority;
-      bestEnqueuedAt = enqueuedAt;
-      bestOffset = offset;
     }
   }
 
-  if (!found) {
-    return false;
-  }
+  if (!found) return false;
 
   uint32_t enqueuedAt = 0;
-  if (!queue.removeAt(bestOffset, intent, enqueuedAt)) return false;
+  if (!queue.removeAt(best.offset, intent, enqueuedAt)) return false;
 
   uint8_t index = static_cast<uint8_t>(intent.type);
   if (index < kIntentTypeCount) {
