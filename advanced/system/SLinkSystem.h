@@ -28,6 +28,7 @@ public:
   void poll();
   bool addCommandInput(SLinkCommandInput& input);
   bool addEventOutput(SLinkUnitEventHandler& output);
+  void applyInitialState(uint16_t disc, uint8_t track);
   SLinkCommandIntentSource& intentSource();
 
 private:
@@ -58,4 +59,7 @@ private:
   SLinkCommandSenderStateSync _senderStateSync;
   bool _debugToSerial = true;
   SLinkFrameCallbacks _frameCallbacks;
+
+  void requestInitialState();
+  void emitInitialState();
 };

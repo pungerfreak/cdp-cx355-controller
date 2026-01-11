@@ -73,11 +73,8 @@ bool SLinkUnitCommandSender::resolveChange(SLinkUnitCommand& cmd) const {
   if (cmd.type == SLinkUnitCommandType::ChangeTrack) {
     if (cmd.track == 0) return false;
     if (cmd.disc == 0) {
-      if (!_hasDisc) {
-        cmd.disc = 1;
-      } else {
-        cmd.disc = _currentDisc;
-      }
+      if (!_hasDisc) return false;
+      cmd.disc = _currentDisc;
     }
     return true;
   }
