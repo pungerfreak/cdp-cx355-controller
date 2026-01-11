@@ -10,11 +10,13 @@ void SLinkTx::begin() {
 
 void SLinkTx::driveLow() {
   pinMode(_pin, OUTPUT);
+  // Line is inverted: driving the pin LOW holds the bus HIGH (open-collector style).
   digitalWrite(_pin, HIGH);
 }
 
 void SLinkTx::releaseLine() {
   pinMode(_pin, OUTPUT);
+  // Line is inverted: driving the pin HIGH releases the bus to float LOW.
   digitalWrite(_pin, LOW);
 }
 
