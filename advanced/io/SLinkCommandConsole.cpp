@@ -110,7 +110,7 @@ bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
     _io.println("invalid: DISC");
     return true;
   }
-  printTx("DISC", disc);
+  printTx("CHANGE_DISC", disc);
   if (_input.changeDisc(disc)) {
   } else {
     _io.println("unsupported: DISC");
@@ -132,7 +132,7 @@ bool SLinkCommandConsole::dispatchTrack(const char* cmd) {
     _io.println("invalid: TRACK");
     return true;
   }
-  printTx("TRACK", track);
+  printTx("CHANGE_TRACK", track);
   if (_input.changeTrack((uint8_t)track)) {
   } else {
     _io.println("unsupported: TRACK");
