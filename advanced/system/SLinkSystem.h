@@ -21,15 +21,13 @@ class SLinkUnitEventHandler;
 
 class SLinkSystem {
 public:
-  explicit SLinkSystem(HardwareSerial& serial);
-  explicit SLinkSystem(Stream& serial);
+  explicit SLinkSystem(HardwareSerial& serial, bool debugToSerial);
+  explicit SLinkSystem(Stream& serial, bool debugToSerial);
 
   void begin();
   void poll();
   bool addCommandInput(SLinkCommandInput& input);
   bool addEventOutput(SLinkUnitEventHandler& output);
-  void attachCommandInput(SLinkCommandInput& input);
-  void attachEventOutput(SLinkUnitEventHandler& output);
   SLinkCommandIntentSource& intentSource();
 
 private:
@@ -37,8 +35,6 @@ private:
   static constexpr uint8_t kMaxEventOutputs = 4;
   static constexpr uint8_t kTxPin = 2;
   static constexpr uint8_t kRxPin = 21;
-  static constexpr bool kDebugToSerial = true;
-
   Stream& _serial;
   HardwareSerial* _hardwareSerial = nullptr;
   SLinkBusState _busState;
@@ -60,5 +56,6 @@ private:
   SLinkUnitEventBus _unitEventBus;
   SLinkUnitEventPublisher _unitEventPublisher;
   SLinkCommandSenderStateSync _senderStateSync;
+  bool _debugToSerial = true;
   SLinkFrameCallbacks _frameCallbacks;
 };

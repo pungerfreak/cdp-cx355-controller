@@ -1,6 +1,6 @@
 #include "system/SLinkSystem.h"
 
-SLinkSystem::SLinkSystem(HardwareSerial& serial)
+SLinkSystem::SLinkSystem(HardwareSerial& serial, bool debugToSerial)
     : _serial(serial),
       _hardwareSerial(&serial),
       _busState(),
@@ -18,13 +18,14 @@ SLinkSystem::SLinkSystem(HardwareSerial& serial)
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
       _senderStateSync(_commandSender),
+      _debugToSerial(debugToSerial),
       _frameCallbacks(_serial,
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
-                       kDebugToSerial) {}
+                       _debugToSerial) {}
 
-SLinkSystem::SLinkSystem(Stream& serial)
+SLinkSystem::SLinkSystem(Stream& serial, bool debugToSerial)
     : _serial(serial),
       _busState(),
       _txGate(_busState),
@@ -41,11 +42,12 @@ SLinkSystem::SLinkSystem(Stream& serial)
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
       _senderStateSync(_commandSender),
+      _debugToSerial(debugToSerial),
       _frameCallbacks(_serial,
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
-                       kDebugToSerial) {}
+                       _debugToSerial) {}
 
 void SLinkSystem::begin() {
   if (_hardwareSerial != nullptr) {
@@ -79,14 +81,6 @@ bool SLinkSystem::addEventOutput(SLinkUnitEventHandler& output) {
   if (_eventOutputCount >= kMaxEventOutputs) return false;
   _eventOutputs[_eventOutputCount++] = &output;
   return _frameCallbacks.addOutputHandler(output);
-}
-
-void SLinkSystem::attachCommandInput(SLinkCommandInput& input) {
-  addCommandInput(input);
-}
-
-void SLinkSystem::attachEventOutput(SLinkUnitEventHandler& output) {
-  addEventOutput(output);
 }
 
 SLinkCommandIntentSource& SLinkSystem::intentSource() {

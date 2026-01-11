@@ -16,9 +16,6 @@ void SLinkCommandSenderStateSync::onUnitEvent(const SLinkUnitEvent& event) {
       updateDisc(event.disc);
       break;
     case SLinkUnitEventType::TransportStateChanged:
-    case SLinkUnitEventType::TimeUpdated:
-    case SLinkUnitEventType::Error:
-    case SLinkUnitEventType::FrameRx:
     case SLinkUnitEventType::Unknown:
       break;
   }
