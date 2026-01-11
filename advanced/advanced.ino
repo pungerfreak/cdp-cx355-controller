@@ -1,5 +1,5 @@
-#include "command/SLinkCommandConsole.h"
-#include "debug/SLinkPrettyPrinter.h"
+#include "io/SLinkCommandConsole.h"
+#include "io/SLinkPrettyPrinter.h"
 #include "system/SLinkSystem.h"
 
 SLinkSystem slinkSystem(Serial);

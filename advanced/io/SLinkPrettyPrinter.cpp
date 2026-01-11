@@ -1,4 +1,4 @@
-#include "debug/SLinkPrettyPrinter.h"
+#include "io/SLinkPrettyPrinter.h"
 
 namespace {
 void printHexByte(uint8_t b, Stream& out) {

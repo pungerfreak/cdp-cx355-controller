@@ -1,4 +1,4 @@
-#include "command/SLinkCommandConsole.h"
+#include "io/SLinkCommandConsole.h"
 #include <string.h>
 
 SLinkCommandConsole::SLinkCommandConsole(Stream& io,
