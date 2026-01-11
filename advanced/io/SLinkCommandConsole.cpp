@@ -7,29 +7,29 @@ SLinkCommandConsole::SLinkCommandConsole(Stream& io,
     : _io(io), _input(input), _printTx(printTx) {}
 
 void SLinkCommandConsole::printHelp() {
-  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, DISC <1-300>, TRACK <1-99>");
+  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>");
 }
 
 bool SLinkCommandConsole::normalizeCommand(const char* in, char* out, uint8_t outSize) const {
   if (!in || !out || outSize < 2) return false;
   uint8_t n = 0;
-  bool lastUnderscore = false;
+  bool lastSpace = false;
   for (uint8_t i = 0; in[i] != '\0'; i++) {
     char c = in[i];
     if (c <= ' ') {
-      if (!lastUnderscore && n < (outSize - 1)) {
-        out[n++] = '_';
-        lastUnderscore = true;
+      if (!lastSpace && n < (outSize - 1)) {
+        out[n++] = ' ';
+        lastSpace = true;
       }
       continue;
     }
     if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
     if (n < (outSize - 1)) {
       out[n++] = c;
-      lastUnderscore = false;
+      lastSpace = false;
     }
   }
-  if (n && out[n - 1] == '_') n--;
+  if (n && out[n - 1] == ' ') n--;
   out[n] = '\0';
   return n > 0;
 }
@@ -50,16 +50,6 @@ bool SLinkCommandConsole::parseNumber(const char* in, uint16_t& value) const {
   }
   value = (uint16_t)v;
   return true;
-}
-
-bool SLinkCommandConsole::parsePrefixedNumber(const char* cmd,
-                                              const char* prefix,
-                                              uint16_t& value) const {
-  if (!cmd || !prefix) return false;
-  const size_t len = strlen(prefix);
-  if (strncmp(cmd, prefix, len) != 0) return false;
-  if (cmd[len] != '_') return false;
-  return parseNumber(cmd + len + 1, value);
 }
 
 bool SLinkCommandConsole::dispatchSimple(const char* cmd) {
@@ -108,15 +98,19 @@ void SLinkCommandConsole::printTx(const char* label, uint16_t value) {
 
 bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
   uint16_t disc = 0;
-  if (!parsePrefixedNumber(cmd, "DISC", disc) &&
-      !parsePrefixedNumber(cmd, "CHANGE_DISC", disc)) {
+  const char* prefix = "CHANGE_DISC ";
+  const size_t len = strlen(prefix);
+  if (!cmd || strncmp(cmd, prefix, len) != 0) {
+    return false;
+  }
+  if (!parseNumber(cmd + len, disc)) {
     return false;
   }
   if (disc == 0 || disc > 300u) {
     _io.println("invalid: DISC");
     return true;
   }
-  printTx("DISC", disc);
+  printTx("CHANGE_DISC", disc);
   if (_input.changeDisc(disc)) {
   } else {
     _io.println("unsupported: DISC");
@@ -126,15 +120,19 @@ bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
 
 bool SLinkCommandConsole::dispatchTrack(const char* cmd) {
   uint16_t track = 0;
-  if (!parsePrefixedNumber(cmd, "TRACK", track) &&
-      !parsePrefixedNumber(cmd, "CHANGE_TRACK", track)) {
+  const char* prefix = "CHANGE_TRACK ";
+  const size_t len = strlen(prefix);
+  if (!cmd || strncmp(cmd, prefix, len) != 0) {
+    return false;
+  }
+  if (!parseNumber(cmd + len, track)) {
     return false;
   }
   if (track == 0 || track > 99u) {
     _io.println("invalid: TRACK");
     return true;
   }
-  printTx("TRACK", track);
+  printTx("CHANGE_TRACK", track);
   if (_input.changeTrack((uint8_t)track)) {
   } else {
     _io.println("unsupported: TRACK");

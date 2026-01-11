@@ -1,6 +1,6 @@
 #include "system/SLinkSystem.h"
 
-SLinkSystem::SLinkSystem(HardwareSerial& serial)
+SLinkSystem::SLinkSystem(HardwareSerial& serial, bool debugToSerial)
     : _serial(serial),
       _hardwareSerial(&serial),
       _busState(),
@@ -18,13 +18,14 @@ SLinkSystem::SLinkSystem(HardwareSerial& serial)
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
       _senderStateSync(_commandSender),
+      _debugToSerial(debugToSerial),
       _frameCallbacks(_serial,
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
-                       kDebugToSerial) {}
+                       _debugToSerial) {}
 
-SLinkSystem::SLinkSystem(Stream& serial)
+SLinkSystem::SLinkSystem(Stream& serial, bool debugToSerial)
     : _serial(serial),
       _busState(),
       _txGate(_busState),
@@ -41,11 +42,12 @@ SLinkSystem::SLinkSystem(Stream& serial)
       _unitEventBus(),
       _unitEventPublisher(_unitEventBus),
       _senderStateSync(_commandSender),
+      _debugToSerial(debugToSerial),
       _frameCallbacks(_serial,
                        _translator,
                        _unitEventPublisher,
                        _debugPrinter,
-                       kDebugToSerial) {}
+                       _debugToSerial) {}
 
 void SLinkSystem::begin() {
   if (_hardwareSerial != nullptr) {
@@ -57,6 +59,7 @@ void SLinkSystem::begin() {
   _slinkRx.setRxCallback(SLinkFrameCallbacks::onRxFrame, &_frameCallbacks);
   _slinkRx.begin();
   _slinkTx.begin();
+  requestInitialState();
 }
 
 void SLinkSystem::poll() {
@@ -81,14 +84,34 @@ bool SLinkSystem::addEventOutput(SLinkUnitEventHandler& output) {
   return _frameCallbacks.addOutputHandler(output);
 }
 
-void SLinkSystem::attachCommandInput(SLinkCommandInput& input) {
-  addCommandInput(input);
-}
-
-void SLinkSystem::attachEventOutput(SLinkUnitEventHandler& output) {
-  addEventOutput(output);
+void SLinkSystem::applyInitialState(uint16_t disc, uint8_t track) {
+  _unitStateStore.setInitialState(disc, track);
+  if (disc > 0) {
+    _commandSender.setCurrentDisc(disc);
+  }
+  emitInitialState();
 }
 
 SLinkCommandIntentSource& SLinkSystem::intentSource() {
   return _intentAdapter;
+}
+
+void SLinkSystem::requestInitialState() {
+  // TODO: send the yet-to-be-discovered status request command.
+  // The response handler should call applyInitialState() with parsed disc/track.
+}
+
+void SLinkSystem::emitInitialState() {
+  SLinkDiscInfo discInfo;
+  SLinkTrackInfo trackInfo;
+  _unitStateStore.stateInfo(discInfo, trackInfo);
+  for (uint8_t i = 0; i < _eventOutputCount; ++i) {
+    if (_eventOutputs[i] != nullptr) {
+      if (trackInfo.present) {
+        _eventOutputs[i]->changeTrack(discInfo, trackInfo, nullptr);
+      } else if (discInfo.present) {
+        _eventOutputs[i]->changeDisc(discInfo, nullptr);
+      }
+    }
+  }
 }

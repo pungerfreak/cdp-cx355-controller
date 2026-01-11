@@ -2,7 +2,9 @@
 #include "io/SLinkPrettyPrinter.h"
 #include "system/SLinkSystem.h"
 
-SLinkSystem slinkSystem(Serial);
+constexpr bool kDebugToSerial = true;
+
+SLinkSystem slinkSystem(Serial, kDebugToSerial);
 SLinkCommandConsole slinkConsole(Serial, slinkSystem.intentSource(), true);
 SLinkPrettyPrinter slinkPrinter(Serial);
 

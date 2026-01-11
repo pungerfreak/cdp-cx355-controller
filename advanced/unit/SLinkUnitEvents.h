@@ -6,9 +6,6 @@ enum class SLinkUnitEventType : uint8_t {
   TransportStateChanged,
   DiscChanged,
   TrackChanged,
-  TimeUpdated,
-  Error,
-  FrameRx,
   Unknown
 };
 
