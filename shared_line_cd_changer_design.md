@@ -161,6 +161,9 @@ Initial interface:
 
 ## Intent Taxonomy (UI → System)
 
+> **Future feature note:** The intent list below represents the target taxonomy. Some intents
+> (seek, next/prev, query) and metadata fields may be added incrementally.
+
 - `Intent.Transport.Play`
 - `Intent.Transport.Pause`
 - `Intent.Transport.Stop`
@@ -192,6 +195,9 @@ Intent metadata:
 ---
 
 ## Arbitration Policies (Touchscreen-Focused)
+
+> **Future feature note:** These policies describe the desired behavior once the full
+> intent taxonomy (including seek and query intents) is implemented.
 
 - Deduplicate transport intents within 250 ms
 - Throttle seek intents to a fixed rate

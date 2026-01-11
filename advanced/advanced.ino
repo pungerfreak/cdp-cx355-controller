@@ -1,38 +1,20 @@
-#include "SLinkCommandConsole.h"
-#include "SLinkCommandSender.h"
-#include "SLinkDecode.h"
-#include "SLinkDebugPrinter.h"
-#include "SLinkInterface.h"
-#include "SLinkPrettyPrinter.h"
-#include "SLinkRx.h"
-#include "SLinkSerialCallbacks.h"
-#include "SLinkStateTracker.h"
-#include "SLinkTx.h"
+#include "io/SLinkCommandConsole.h"
+#include "io/SLinkPrettyPrinter.h"
+#include "system/SLinkSystem.h"
 
-const uint8_t TX_PIN         = 2;
-const uint8_t RX_PIN         = 21;
-constexpr bool debugToSerial = true;
+constexpr bool kDebugToSerial = true;
 
-SLinkRx slinkRx(RX_PIN);
-SLinkTx slinkTx(TX_PIN);
-SLinkCommandSender commandSender(slinkTx);
-SLinkCommandConsole commandConsole(Serial, commandSender, true);
-SLinkTranslator translator;
-SLinkDebugPrinter debugPrinter(Serial);
-SLinkPrettyPrinter prettyPrinter(Serial);
-SLinkStateTracker stateTracker(commandSender);
-SLinkSerialCallbacks serialCallbacks(Serial, translator, stateTracker, debugPrinter,
-                                     prettyPrinter, debugToSerial);
+SLinkSystem slinkSystem(Serial, kDebugToSerial);
+SLinkCommandConsole slinkConsole(Serial, slinkSystem.intentSource(), true);
+SLinkPrettyPrinter slinkPrinter(Serial);
 
 void setup() {
   Serial.begin(230400);
-  commandSender.setTxCallback(SLinkSerialCallbacks::onTxFrame, &serialCallbacks);
-  slinkRx.setRxCallback(SLinkSerialCallbacks::onRxFrame, &serialCallbacks);
-  slinkRx.begin();
-  slinkTx.begin();
+  slinkSystem.addCommandInput(slinkConsole);
+  slinkSystem.addEventOutput(slinkPrinter);
+  slinkSystem.begin();
 }
 
 void loop() {
-  commandConsole.poll();
-  slinkRx.poll(5000);
+  slinkSystem.poll();
 }
