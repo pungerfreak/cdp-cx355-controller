@@ -64,6 +64,7 @@ void IRAM_ATTR SLinkRx::isrThunk() {
 
 void IRAM_ATTR SLinkRx::onEdgeISR() {
   if (_busState.txActive()) {
+    _busState.noteRxDuringTx();
     return;
   }
   uint32_t now = micros();

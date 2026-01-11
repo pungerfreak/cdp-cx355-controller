@@ -5,6 +5,7 @@ class SLinkBusState {
 public:
   void begin();
   void noteRxEdge(uint32_t nowUs);
+  void noteRxDuringTx();
   void noteTxStart(uint32_t nowUs);
   void noteTxEnd(uint32_t nowUs);
 

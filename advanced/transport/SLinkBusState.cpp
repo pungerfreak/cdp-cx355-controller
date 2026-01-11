@@ -14,6 +14,10 @@ void SLinkBusState::noteRxEdge(uint32_t nowUs) {
   }
 }
 
+void SLinkBusState::noteRxDuringTx() {
+  _rxDuringTx = true;
+}
+
 void SLinkBusState::noteTxStart(uint32_t nowUs) {
   _txActive = true;
   _rxDuringTx = false;
