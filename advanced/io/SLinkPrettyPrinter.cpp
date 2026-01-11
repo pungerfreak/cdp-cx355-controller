@@ -1,7 +1,7 @@
 #include "io/SLinkPrettyPrinter.h"
 
 namespace {
-void printHexByte(uint8_t b, Stream& out) {
+void printPrettyHexByte(uint8_t b, Stream& out) {
   if (b < 16) out.print('0');
   out.print(b, HEX);
 }
@@ -16,7 +16,7 @@ void SLinkPrettyPrinter::printDisc(const SLinkDiscInfo& disc) {
     _out.print(disc.disc);
   } else {
     _out.print(" disc=? disc_raw=0x");
-    printHexByte(disc.raw, _out);
+    printPrettyHexByte(disc.raw, _out);
   }
 }
 
@@ -27,7 +27,7 @@ void SLinkPrettyPrinter::printTrack(const SLinkTrackInfo& track) {
     _out.print(track.track);
   } else {
     _out.print(" track=? track_raw=0x");
-    printHexByte(track.raw, _out);
+    printPrettyHexByte(track.raw, _out);
   }
 }
 
@@ -41,9 +41,9 @@ void SLinkPrettyPrinter::printLength(const SLinkTrackInfo& track) {
     _out.print(track.seconds);
   } else {
     _out.print(" length=? length_raw=0x");
-    printHexByte(track.minRaw, _out);
+    printPrettyHexByte(track.minRaw, _out);
     _out.print(" 0x");
-    printHexByte(track.secRaw, _out);
+    printPrettyHexByte(track.secRaw, _out);
   }
 }
 
