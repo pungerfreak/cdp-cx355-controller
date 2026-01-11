@@ -96,6 +96,10 @@ SLinkCommandIntentSource& SLinkSystem::intentSource() {
   return _intentAdapter;
 }
 
+SLinkTx& SLinkSystem::tx() {
+  return _slinkTx;
+}
+
 void SLinkSystem::requestInitialState() {
   // TODO: send the yet-to-be-discovered status request command.
   // The response handler should call applyInitialState() with parsed disc/track.
