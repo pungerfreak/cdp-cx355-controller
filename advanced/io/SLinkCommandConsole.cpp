@@ -13,23 +13,23 @@ void SLinkCommandConsole::printHelp() {
 bool SLinkCommandConsole::normalizeCommand(const char* in, char* out, uint8_t outSize) const {
   if (!in || !out || outSize < 2) return false;
   uint8_t n = 0;
-  bool lastUnderscore = false;
+  bool lastSpace = false;
   for (uint8_t i = 0; in[i] != '\0'; i++) {
     char c = in[i];
     if (c <= ' ') {
-      if (!lastUnderscore && n < (outSize - 1)) {
-        out[n++] = '_';
-        lastUnderscore = true;
+      if (!lastSpace && n < (outSize - 1)) {
+        out[n++] = ' ';
+        lastSpace = true;
       }
       continue;
     }
     if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
     if (n < (outSize - 1)) {
       out[n++] = c;
-      lastUnderscore = false;
+      lastSpace = false;
     }
   }
-  if (n && out[n - 1] == '_') n--;
+  if (n && out[n - 1] == ' ') n--;
   out[n] = '\0';
   return n > 0;
 }
@@ -98,7 +98,7 @@ void SLinkCommandConsole::printTx(const char* label, uint16_t value) {
 
 bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
   uint16_t disc = 0;
-  const char* prefix = "CHANGE_DISC_";
+  const char* prefix = "CHANGE_DISC ";
   const size_t len = strlen(prefix);
   if (!cmd || strncmp(cmd, prefix, len) != 0) {
     return false;
@@ -120,7 +120,7 @@ bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
 
 bool SLinkCommandConsole::dispatchTrack(const char* cmd) {
   uint16_t track = 0;
-  const char* prefix = "CHANGE_TRACK_";
+  const char* prefix = "CHANGE_TRACK ";
   const size_t len = strlen(prefix);
   if (!cmd || strncmp(cmd, prefix, len) != 0) {
     return false;
