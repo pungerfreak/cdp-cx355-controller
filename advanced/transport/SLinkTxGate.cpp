@@ -7,6 +7,7 @@ void SLinkTxGate::begin() {
 }
 
 bool SLinkTxGate::canTransmit(uint32_t nowUs) const {
+  if (!_protocolAllowsTx) return false;
   if (nowUs < _backoffUntilUs) return false;
   uint32_t lastActivity = _bus.lastActivityUs();
   if (nowUs - lastActivity < _idleGapUs) return false;
@@ -27,6 +28,10 @@ void SLinkTxGate::endTx(uint32_t nowUs, bool aborted) {
   if (aborted) {
     _backoffUntilUs = nowUs + randomBackoffUs();
   }
+}
+
+void SLinkTxGate::setProtocolAllowsTx(bool allow) {
+  _protocolAllowsTx = allow;
 }
 
 uint32_t SLinkTxGate::randomBackoffUs() const {
