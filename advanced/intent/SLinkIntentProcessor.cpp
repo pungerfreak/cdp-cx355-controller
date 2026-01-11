@@ -8,11 +8,14 @@ SLinkIntentProcessor::SLinkIntentProcessor(SLinkIntentQueue& queue,
 void SLinkIntentProcessor::poll() {
   SLinkCommandIntent intent;
   while (_arbiter.selectNext(_queue, intent)) {
-    dispatch(intent);
+    if (!dispatch(intent)) {
+      _queue.push(intent);
+      break;
+    }
   }
 }
 
-void SLinkIntentProcessor::dispatch(const SLinkCommandIntent& intent) {
+bool SLinkIntentProcessor::dispatch(const SLinkCommandIntent& intent) {
   SLinkUnitCommand cmd{SLinkUnitCommandType::Play, 0, 0};
   switch (intent.type) {
     case SLinkIntentType::Play:
@@ -39,5 +42,5 @@ void SLinkIntentProcessor::dispatch(const SLinkCommandIntent& intent) {
       cmd.track = intent.track;
       break;
   }
-  _sender.send(cmd);
+  return _sender.send(cmd);
 }

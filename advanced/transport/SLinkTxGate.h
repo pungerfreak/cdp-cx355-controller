@@ -11,6 +11,7 @@ public:
   bool shouldAbort() const;
   void beginTx(uint32_t nowUs);
   void endTx(uint32_t nowUs, bool aborted);
+  void setProtocolAllowsTx(bool allow);
 
 private:
   uint32_t randomBackoffUs() const;
@@ -21,4 +22,5 @@ private:
   uint32_t _backoffMinUs = 4000;
   uint32_t _backoffMaxUs = 12000;
   uint32_t _backoffUntilUs = 0;
+  bool _protocolAllowsTx = true;
 };

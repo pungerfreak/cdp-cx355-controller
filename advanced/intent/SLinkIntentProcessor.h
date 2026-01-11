@@ -13,7 +13,7 @@ public:
   void poll();
 
 private:
-  void dispatch(const SLinkCommandIntent& intent);
+  bool dispatch(const SLinkCommandIntent& intent);
 
   SLinkIntentQueue& _queue;
   SLinkIntentArbiter& _arbiter;

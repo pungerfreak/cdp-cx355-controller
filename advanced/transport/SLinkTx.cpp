@@ -3,7 +3,8 @@
 SLinkTx::SLinkTx(uint8_t pin, SLinkTxGate& gate) : _pin(pin), _txGate(gate) {}
 
 void SLinkTx::begin() {
-  pinMode(_pin, INPUT_PULLDOWN);
+  pinMode(_pin, OUTPUT);
+  digitalWrite(_pin, LOW);
   _txGate.begin();
 }
 
