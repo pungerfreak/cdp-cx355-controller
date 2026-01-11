@@ -17,7 +17,6 @@ private:
   bool normalizeCommand(const char* in, char* out, uint8_t outSize) const;
   bool isHelpCommand(const char* cmd) const;
   bool parseNumber(const char* in, uint16_t& value) const;
-  bool parsePrefixedNumber(const char* cmd, const char* prefix, uint16_t& value) const;
   bool dispatchSimple(const char* cmd);
   bool dispatchDisc(const char* cmd);
   bool dispatchTrack(const char* cmd);

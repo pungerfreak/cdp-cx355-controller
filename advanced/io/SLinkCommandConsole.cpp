@@ -52,16 +52,6 @@ bool SLinkCommandConsole::parseNumber(const char* in, uint16_t& value) const {
   return true;
 }
 
-bool SLinkCommandConsole::parsePrefixedNumber(const char* cmd,
-                                              const char* prefix,
-                                              uint16_t& value) const {
-  if (!cmd || !prefix) return false;
-  const size_t len = strlen(prefix);
-  if (strncmp(cmd, prefix, len) != 0) return false;
-  if (cmd[len] != '_') return false;
-  return parseNumber(cmd + len + 1, value);
-}
-
 bool SLinkCommandConsole::dispatchSimple(const char* cmd) {
   if (!cmd) return false;
   if (strcmp(cmd, "PLAY") == 0) {
@@ -108,7 +98,12 @@ void SLinkCommandConsole::printTx(const char* label, uint16_t value) {
 
 bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
   uint16_t disc = 0;
-  if (!parsePrefixedNumber(cmd, "CHANGE_DISC", disc)) {
+  const char* prefix = "CHANGE_DISC_";
+  const size_t len = strlen(prefix);
+  if (!cmd || strncmp(cmd, prefix, len) != 0) {
+    return false;
+  }
+  if (!parseNumber(cmd + len, disc)) {
     return false;
   }
   if (disc == 0 || disc > 300u) {
@@ -125,7 +120,12 @@ bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
 
 bool SLinkCommandConsole::dispatchTrack(const char* cmd) {
   uint16_t track = 0;
-  if (!parsePrefixedNumber(cmd, "CHANGE_TRACK", track)) {
+  const char* prefix = "CHANGE_TRACK_";
+  const size_t len = strlen(prefix);
+  if (!cmd || strncmp(cmd, prefix, len) != 0) {
+    return false;
+  }
+  if (!parseNumber(cmd + len, track)) {
     return false;
   }
   if (track == 0 || track > 99u) {
