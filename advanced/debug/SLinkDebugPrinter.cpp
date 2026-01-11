@@ -1,14 +1,14 @@
 #include "debug/SLinkDebugPrinter.h"
 
 namespace {
-void printHexByte(uint8_t b, Stream& out) {
+void printDebugHexByte(uint8_t b, Stream& out) {
   if (b < 16) out.print('0');
   out.print(b, HEX);
 }
 
 void printHex(const uint8_t* data, uint16_t len, Stream& out) {
   for (uint16_t i = 0; i < len; i++) {
-    printHexByte(data[i], out);
+    printDebugHexByte(data[i], out);
     if (i + 1 < len) out.print(' ');
   }
 }
@@ -37,7 +37,7 @@ SLinkDebugPrinter::SLinkDebugPrinter(Stream& out) : _out(out) {}
 void SLinkDebugPrinter::printDisc(const SLinkDiscInfo& disc) {
   if (!disc.present) return;
   _out.print(" disc_raw=0x");
-  printHexByte(disc.raw, _out);
+  printDebugHexByte(disc.raw, _out);
   _out.print(" disc=");
   if (disc.valid) _out.print(disc.disc);
   else _out.print('?');
@@ -46,7 +46,7 @@ void SLinkDebugPrinter::printDisc(const SLinkDiscInfo& disc) {
 void SLinkDebugPrinter::printTrack(const SLinkTrackInfo& track) {
   if (!track.present) return;
   _out.print(" track_raw=0x");
-  printHexByte(track.raw, _out);
+  printDebugHexByte(track.raw, _out);
   _out.print(" track=");
   if (track.valid) _out.print(track.track);
   else _out.print('?');
@@ -55,9 +55,9 @@ void SLinkDebugPrinter::printTrack(const SLinkTrackInfo& track) {
 void SLinkDebugPrinter::printLength(const SLinkTrackInfo& track) {
   if (!track.lengthPresent) return;
   _out.print(" length_raw=0x");
-  printHexByte(track.minRaw, _out);
+  printDebugHexByte(track.minRaw, _out);
   _out.print(" 0x");
-  printHexByte(track.secRaw, _out);
+  printDebugHexByte(track.secRaw, _out);
   _out.print(" length=");
   if (track.lengthValid) {
     _out.print(track.minutes);
@@ -80,11 +80,11 @@ void SLinkDebugPrinter::printChecksumHints(const SLinkDebugInfo& debug) {
   if (!debug.hasChecksum) return;
 
   _out.print(" chk_last=0x");
-  printHexByte(debug.checksumLast, _out);
+  printDebugHexByte(debug.checksumLast, _out);
   _out.print(" sum=0x");
-  printHexByte(debug.checksumSum, _out);
+  printDebugHexByte(debug.checksumSum, _out);
   _out.print(" xor=0x");
-  printHexByte(debug.checksumXor, _out);
+  printDebugHexByte(debug.checksumXor, _out);
 
   if (debug.checksumSumMatch || debug.checksumSumInvMatch ||
       debug.checksumXorMatch || debug.checksumXorInvMatch) {
@@ -129,10 +129,10 @@ void SLinkDebugPrinter::printLine(const char* name,
   _out.print(debug->len);
 
   _out.print(" b0=0x");
-  printHexByte(debug->unit, _out);
+  printDebugHexByte(debug->unit, _out);
   if (debug->len >= 2) {
     _out.print(" b1=0x");
-    printHexByte(debug->cmd, _out);
+    printDebugHexByte(debug->cmd, _out);
   }
 
   if (disc) printDisc(*disc);
