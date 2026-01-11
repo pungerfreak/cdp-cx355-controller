@@ -19,6 +19,12 @@ private:
   };
 
   static const Policy& policyFor(SLinkIntentType type);
+  static bool shouldExpire(uint32_t now,
+                           const Policy& policy,
+                           uint32_t enqueuedAt);
+  static bool isThrottled(uint32_t now,
+                          const Policy& policy,
+                          uint32_t lastDispatched);
 
   uint32_t _lastDispatchMs[kIntentTypeCount] = {};
 };
