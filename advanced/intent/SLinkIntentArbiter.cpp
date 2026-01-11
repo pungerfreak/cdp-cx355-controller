@@ -35,25 +35,25 @@ const SLinkIntentArbiter::Policy& SLinkIntentArbiter::policyFor(
   return kPolicies[index];
 }
 
+bool SLinkIntentArbiter::shouldExpire(uint32_t now,
+                                      const Policy& policy,
+                                      uint32_t enqueuedAt) {
+  return policy.expireMs > 0 && (now - enqueuedAt) > policy.expireMs;
+}
+
+bool SLinkIntentArbiter::isThrottled(uint32_t now,
+                                     const Policy& policy,
+                                     uint32_t lastDispatched) {
+  return policy.throttleMs > 0 && lastDispatched != 0 &&
+         (now - lastDispatched) < policy.throttleMs;
+}
+
 namespace {
 struct IntentCandidate {
   uint8_t offset = 0;
   uint8_t priority = 0;
   uint32_t enqueuedAt = 0;
 };
-
-bool shouldExpire(uint32_t now,
-                  const SLinkIntentArbiter::Policy& policy,
-                  uint32_t enqueuedAt) {
-  return policy.expireMs > 0 && (now - enqueuedAt) > policy.expireMs;
-}
-
-bool isThrottled(uint32_t now,
-                 const SLinkIntentArbiter::Policy& policy,
-                 uint32_t lastDispatched) {
-  return policy.throttleMs > 0 && lastDispatched != 0 &&
-         (now - lastDispatched) < policy.throttleMs;
-}
 
 bool isBetterCandidate(const IntentCandidate& candidate,
                        const IntentCandidate& best) {
