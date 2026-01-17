@@ -18,10 +18,12 @@ public:
 
 private:
   static constexpr uint8_t kBufferSize = 32;
+  static constexpr uint8_t kMaxSendBytes = 16;
 
   bool normalizeCommand(const char* in, char* out, uint8_t outSize) const;
   bool isHelpCommand(const char* cmd) const;
   bool parseNumber(const char* in, uint16_t& value) const;
+  bool parseHexBytes(const char* in, uint8_t* out, uint8_t maxLen, uint8_t& outLen) const;
   bool dispatchSimple(const char* cmd);
   bool dispatchDisc(const char* cmd);
   bool dispatchTrack(const char* cmd);

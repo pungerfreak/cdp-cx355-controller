@@ -54,6 +54,41 @@ bool SLinkCommandConsole::parseNumber(const char* in, uint16_t& value) const {
   return true;
 }
 
+bool SLinkCommandConsole::parseHexBytes(const char* in,
+                                        uint8_t* out,
+                                        uint8_t maxLen,
+                                        uint8_t& outLen) const {
+  if (!in || !out || maxLen == 0) return false;
+  outLen = 0;
+  bool haveNibble = false;
+  uint8_t nibble = 0;
+  for (uint8_t i = 0; in[i] != '\0'; ++i) {
+    char c = in[i];
+    if (c == ' ') continue;
+    uint8_t value = 0;
+    if (c >= '0' && c <= '9') {
+      value = (uint8_t)(c - '0');
+    } else if (c >= 'a' && c <= 'f') {
+      value = (uint8_t)(c - 'a' + 10);
+    } else if (c >= 'A' && c <= 'F') {
+      value = (uint8_t)(c - 'A' + 10);
+    } else {
+      return false;
+    }
+    if (!haveNibble) {
+      nibble = value;
+      haveNibble = true;
+    } else {
+      if (outLen >= maxLen) {
+        return false;
+      }
+      out[outLen++] = (uint8_t)((nibble << 4) | value);
+      haveNibble = false;
+    }
+  }
+  return !haveNibble && outLen > 0;
+}
+
 bool SLinkCommandConsole::dispatchSimple(const char* cmd) {
   if (!cmd) return false;
   if (strcmp(cmd, "PLAY") == 0) {
@@ -173,38 +208,9 @@ bool SLinkCommandConsole::dispatchSend(const char* cmd) {
     return true;
   }
 
-  static constexpr uint8_t kMaxSendBytes = 16;
   uint8_t bytes[kMaxSendBytes];
   uint8_t count = 0;
-  bool haveNibble = false;
-  uint8_t nibble = 0;
-
-  for (uint8_t i = 0; hex[i] != '\0'; ++i) {
-    char c = hex[i];
-    if (c == ' ') continue;
-    uint8_t value = 0;
-    if (c >= '0' && c <= '9') {
-      value = (uint8_t)(c - '0');
-    } else if (c >= 'A' && c <= 'F') {
-      value = (uint8_t)(c - 'A' + 10);
-    } else {
-      _io.println("invalid: SEND");
-      return true;
-    }
-    if (!haveNibble) {
-      nibble = value;
-      haveNibble = true;
-    } else {
-      if (count >= kMaxSendBytes) {
-        _io.println("invalid: SEND");
-        return true;
-      }
-      bytes[count++] = (uint8_t)((nibble << 4) | value);
-      haveNibble = false;
-    }
-  }
-
-  if (haveNibble || count == 0) {
+  if (!parseHexBytes(hex, bytes, kMaxSendBytes, count)) {
     _io.println("invalid: SEND");
     return true;
   }
