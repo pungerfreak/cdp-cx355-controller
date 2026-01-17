@@ -5,7 +5,7 @@
 constexpr bool kDebugToSerial = true;
 
 SLinkSystem slinkSystem(Serial, kDebugToSerial);
-SLinkCommandConsole slinkConsole(Serial, slinkSystem.intentSource(), true);
+SLinkCommandConsole slinkConsole(Serial, slinkSystem.intentSource(), true, &slinkSystem.tx());
 SLinkPrettyPrinter slinkPrinter(Serial);
 
 void setup() {

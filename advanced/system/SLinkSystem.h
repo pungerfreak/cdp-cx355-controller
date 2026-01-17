@@ -30,6 +30,7 @@ public:
   bool addEventOutput(SLinkUnitEventHandler& output);
   void applyInitialState(uint16_t disc, uint8_t track);
   SLinkCommandIntentSource& intentSource();
+  SLinkTx& tx();
 
 private:
   static constexpr uint8_t kMaxCommandInputs = 4;
