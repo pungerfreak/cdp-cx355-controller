@@ -20,6 +20,9 @@ private:
   static constexpr uint8_t kBufferSize = 32;
   static constexpr uint8_t kMaxSendBytes = 16;
 
+  static bool isWhitespace(char c);
+  static char normalizeChar(char c);
+
   bool normalizeCommand(const char* in, char* out, uint8_t outSize) const;
   bool isHelpCommand(const char* cmd) const;
   bool parseNumber(const char* in, uint16_t& value) const;

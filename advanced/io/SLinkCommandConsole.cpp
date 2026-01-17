@@ -12,20 +12,30 @@ void SLinkCommandConsole::printHelp() {
   _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, SEND <HEX>");
 }
 
+bool SLinkCommandConsole::isWhitespace(char c) {
+  return c <= ' ';
+}
+
+char SLinkCommandConsole::normalizeChar(char c) {
+  if (c >= 'a' && c <= 'z') {
+    return (char)(c - 'a' + 'A');
+  }
+  return c;
+}
+
 bool SLinkCommandConsole::normalizeCommand(const char* in, char* out, uint8_t outSize) const {
   if (!in || !out || outSize < 2) return false;
   uint8_t n = 0;
   bool lastSpace = false;
   for (uint8_t i = 0; in[i] != '\0'; i++) {
-    char c = in[i];
-    if (c <= ' ') {
+    char c = normalizeChar(in[i]);
+    if (isWhitespace(c)) {
       if (!lastSpace && n < (outSize - 1)) {
         out[n++] = ' ';
         lastSpace = true;
       }
       continue;
     }
-    if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
     if (n < (outSize - 1)) {
       out[n++] = c;
       lastSpace = false;
@@ -63,13 +73,11 @@ bool SLinkCommandConsole::parseHexBytes(const char* in,
   bool haveNibble = false;
   uint8_t nibble = 0;
   for (uint8_t i = 0; in[i] != '\0'; ++i) {
-    char c = in[i];
-    if (c == ' ') continue;
+    char c = normalizeChar(in[i]);
+    if (isWhitespace(c)) continue;
     uint8_t value = 0;
     if (c >= '0' && c <= '9') {
       value = (uint8_t)(c - '0');
-    } else if (c >= 'a' && c <= 'f') {
-      value = (uint8_t)(c - 'a' + 10);
     } else if (c >= 'A' && c <= 'F') {
       value = (uint8_t)(c - 'A' + 10);
     } else {
