@@ -28,6 +28,9 @@ public:
   void poll();
   bool addCommandInput(SLinkCommandInput& input);
   bool addEventOutput(SLinkUnitEventHandler& output);
+  bool addUnitObserver(SLinkUnitEventObserver& observer);
+  bool removeUnitObserver(SLinkUnitEventObserver& observer);
+  void getUnitStateSnapshot(SLinkDiscInfo& disc, SLinkTrackInfo& track) const;
   void applyInitialState(uint16_t disc, uint8_t track);
   SLinkCommandIntentSource& intentSource();
 

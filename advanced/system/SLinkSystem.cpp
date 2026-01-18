@@ -84,6 +84,18 @@ bool SLinkSystem::addEventOutput(SLinkUnitEventHandler& output) {
   return _frameCallbacks.addOutputHandler(output);
 }
 
+bool SLinkSystem::addUnitObserver(SLinkUnitEventObserver& observer) {
+  return _unitEventBus.addObserver(observer);
+}
+
+bool SLinkSystem::removeUnitObserver(SLinkUnitEventObserver& observer) {
+  return _unitEventBus.removeObserver(observer);
+}
+
+void SLinkSystem::getUnitStateSnapshot(SLinkDiscInfo& disc, SLinkTrackInfo& track) const {
+  _unitStateStore.stateInfo(disc, track);
+}
+
 void SLinkSystem::applyInitialState(uint16_t disc, uint8_t track) {
   _unitStateStore.setInitialState(disc, track);
   if (disc > 0) {
