@@ -16,71 +16,128 @@ SLinkUnitEventPublisher::SLinkUnitEventPublisher(SLinkUnitEventBus& bus)
 void SLinkUnitEventPublisher::publish(SLinkUnitEventType type,
                                       const SLinkDiscInfo& disc,
                                       const SLinkTrackInfo& track,
+                                      SLinkTransportState transport,
                                       const SLinkDebugInfo* debug) {
-  SLinkUnitEvent event{type, disc, track, debug};
+  SLinkUnitEvent event{type, disc, track, transport, debug};
   _bus.publish(event);
 }
 
 void SLinkUnitEventPublisher::play(const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::TransportStateChanged, emptyDisc(), emptyTrack(), debug);
+  publish(SLinkUnitEventType::TransportStateChanged,
+          emptyDisc(),
+          emptyTrack(),
+          SLinkTransportState::Playing,
+          debug);
 }
 
 void SLinkUnitEventPublisher::stop(const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::TransportStateChanged, emptyDisc(), emptyTrack(), debug);
+  publish(SLinkUnitEventType::TransportStateChanged,
+          emptyDisc(),
+          emptyTrack(),
+          SLinkTransportState::Stopped,
+          debug);
 }
 
 void SLinkUnitEventPublisher::pause(const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::TransportStateChanged, emptyDisc(), emptyTrack(), debug);
+  publish(SLinkUnitEventType::TransportStateChanged,
+          emptyDisc(),
+          emptyTrack(),
+          SLinkTransportState::Paused,
+          debug);
 }
 
 void SLinkUnitEventPublisher::powerOn(const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::TransportStateChanged, emptyDisc(), emptyTrack(), debug);
+  publish(SLinkUnitEventType::TransportStateChanged,
+          emptyDisc(),
+          emptyTrack(),
+          SLinkTransportState::Stopped,
+          debug);
 }
 
 void SLinkUnitEventPublisher::powerOff(const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::TransportStateChanged, emptyDisc(), emptyTrack(), debug);
+  publish(SLinkUnitEventType::TransportStateChanged,
+          emptyDisc(),
+          emptyTrack(),
+          SLinkTransportState::Stopped,
+          debug);
 }
 
 void SLinkUnitEventPublisher::changeDisc(const SLinkDiscInfo& disc,
                                          const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::DiscChanged, disc, emptyTrack(), debug);
+  publish(SLinkUnitEventType::DiscChanged,
+          disc,
+          emptyTrack(),
+          SLinkTransportState::Unchanged,
+          debug);
 }
 
 void SLinkUnitEventPublisher::changeTrack(const SLinkDiscInfo& disc,
                                           const SLinkTrackInfo& track,
                                           const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::TrackChanged, disc, track, debug);
+  publish(SLinkUnitEventType::TrackChanged,
+          disc,
+          track,
+          SLinkTransportState::Unchanged,
+          debug);
 }
 
 void SLinkUnitEventPublisher::ready(const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::DiscChanged, emptyDisc(), emptyTrack(), debug);
+  publish(SLinkUnitEventType::DiscChanged,
+          emptyDisc(),
+          emptyTrack(),
+          SLinkTransportState::Unchanged,
+          debug);
 }
 
 void SLinkUnitEventPublisher::changingDisc(const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::DiscChanged, emptyDisc(), emptyTrack(), debug);
+  publish(SLinkUnitEventType::DiscChanged,
+          emptyDisc(),
+          emptyTrack(),
+          SLinkTransportState::Unchanged,
+          debug);
 }
 
 void SLinkUnitEventPublisher::discReady(const SLinkDiscInfo& disc,
                                         const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::DiscChanged, disc, emptyTrack(), debug);
+  publish(SLinkUnitEventType::DiscChanged,
+          disc,
+          emptyTrack(),
+          SLinkTransportState::Unchanged,
+          debug);
 }
 
 void SLinkUnitEventPublisher::discLoaded(const SLinkDiscInfo& disc,
                                          const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::DiscChanged, disc, emptyTrack(), debug);
+  publish(SLinkUnitEventType::DiscChanged,
+          disc,
+          emptyTrack(),
+          SLinkTransportState::Unchanged,
+          debug);
 }
 
 void SLinkUnitEventPublisher::loadingDisc(const SLinkDiscInfo& disc,
                                           const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::DiscChanged, disc, emptyTrack(), debug);
+  publish(SLinkUnitEventType::DiscChanged,
+          disc,
+          emptyTrack(),
+          SLinkTransportState::Unchanged,
+          debug);
 }
 
 void SLinkUnitEventPublisher::changingTrack(const SLinkDiscInfo& disc,
                                             const SLinkTrackInfo& track,
                                             const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::TrackChanged, disc, track, debug);
+  publish(SLinkUnitEventType::TrackChanged,
+          disc,
+          track,
+          SLinkTransportState::Unchanged,
+          debug);
 }
 
 void SLinkUnitEventPublisher::unknown(const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::Unknown, emptyDisc(), emptyTrack(), debug);
+  publish(SLinkUnitEventType::Unknown,
+          emptyDisc(),
+          emptyTrack(),
+          SLinkTransportState::Unchanged,
+          debug);
 }

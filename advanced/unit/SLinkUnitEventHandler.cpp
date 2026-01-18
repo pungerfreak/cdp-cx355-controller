@@ -1,4 +1,5 @@
 #include "unit/SLinkUnitEventHandler.h"
+#include "unit/SLinkUnitEvents.h"
 #include <string.h>
 
 namespace {
@@ -28,6 +29,7 @@ SLinkTrackInfo makeTrackInfo(const SLinkMessage& msg) {
   track.seconds = msg.trackSec;
   track.minRaw = msg.trackMinRaw;
   track.secRaw = msg.trackSecRaw;
+  track.transport = SLinkTransportState::Unchanged;
   return track;
 }
 }  // namespace

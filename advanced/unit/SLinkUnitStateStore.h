@@ -11,6 +11,7 @@ public:
   uint16_t currentDisc() const;
   bool hasTrack() const;
   uint8_t currentTrack() const;
+  SLinkTransportState transportState() const;
 
 private:
   void updateDisc(const SLinkDiscInfo& disc);
@@ -20,4 +21,5 @@ private:
   bool _hasDisc = false;
   uint8_t _currentTrack = 0;
   bool _hasTrack = false;
+  SLinkTransportState _transport = SLinkTransportState::Unknown;
 };

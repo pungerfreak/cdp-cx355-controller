@@ -2,6 +2,8 @@
 #include <Arduino.h>
 #include "transport/SLinkDecode.h"
 
+enum class SLinkTransportState : uint8_t;
+
 struct SLinkDebugInfo {
   const uint8_t* raw = nullptr;
   uint16_t len = 0;
@@ -36,6 +38,7 @@ struct SLinkTrackInfo {
   uint8_t seconds = 0;
   uint8_t minRaw = 0;
   uint8_t secRaw = 0;
+  SLinkTransportState transport;
 };
 
 class SLinkUnitEventHandler {

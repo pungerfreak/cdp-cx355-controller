@@ -29,6 +29,7 @@ private:
   void publish(SLinkUnitEventType type,
                const SLinkDiscInfo& disc,
                const SLinkTrackInfo& track,
+               SLinkTransportState transport,
                const SLinkDebugInfo* debug);
 
   SLinkUnitEventBus& _bus;

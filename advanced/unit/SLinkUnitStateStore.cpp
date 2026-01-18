@@ -17,6 +17,11 @@ void SLinkUnitStateStore::updateTrack(const SLinkTrackInfo& track) {
 void SLinkUnitStateStore::onUnitEvent(const SLinkUnitEvent& event) {
   switch (event.type) {
     case SLinkUnitEventType::DiscChanged:
+      if (!event.disc.present || !event.disc.valid
+          || !_hasDisc || event.disc.disc != _currentDisc) {
+        _currentTrack = 0;
+        _hasTrack = false;
+      }
       updateDisc(event.disc);
       break;
     case SLinkUnitEventType::TrackChanged:
@@ -24,6 +29,10 @@ void SLinkUnitStateStore::onUnitEvent(const SLinkUnitEvent& event) {
       updateTrack(event.track);
       break;
     case SLinkUnitEventType::TransportStateChanged:
+      if (event.transport != SLinkTransportState::Unchanged) {
+        _transport = event.transport;
+      }
+      break;
     case SLinkUnitEventType::Unknown:
       break;
   }
@@ -53,6 +62,7 @@ void SLinkUnitStateStore::stateInfo(SLinkDiscInfo& disc, SLinkTrackInfo& track) 
     track.valid = true;
     track.track = _currentTrack;
   }
+  track.transport = _transport;
 }
 
 bool SLinkUnitStateStore::hasDisc() const {
@@ -69,4 +79,8 @@ bool SLinkUnitStateStore::hasTrack() const {
 
 uint8_t SLinkUnitStateStore::currentTrack() const {
   return _currentTrack;
+}
+
+SLinkTransportState SLinkUnitStateStore::transportState() const {
+  return _transport;
 }
