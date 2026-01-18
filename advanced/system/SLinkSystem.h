@@ -1,4 +1,6 @@
 #pragma once
+#ifndef SLINK_SYSTEM_H_
+#define SLINK_SYSTEM_H_
 #include <Arduino.h>
 #include "command/SLinkCommandInput.h"
 #include "command/SLinkUnitCommandSender.h"
@@ -66,3 +68,4 @@ private:
   void requestInitialState();
   void emitInitialState();
 };
+#endif  // SLINK_SYSTEM_H_

@@ -25,3 +25,5 @@
 #include "unit/SLinkUnitEventHandler.cpp"
 #include "unit/SLinkUnitEventPublisher.cpp"
 #include "unit/SLinkUnitStateStore.cpp"
+#include "ui/UiApp.cpp"
+#include "ui/UiAdapter.cpp"
