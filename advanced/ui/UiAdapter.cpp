@@ -131,6 +131,9 @@ size_t UiAdapter::actionIndex_(UiAction action)
 
 bool UiAdapter::shouldHandleAction_(UiAction action, uint32_t now_ms)
 {
+    if (!isDebouncedAction_(action)) {
+        return true;
+    }
     size_t index = actionIndex_(action);
     if (hasAction_[index] && now_ms - lastActionMs_[index] < kActionDebounceMs_) {
         return false;
@@ -138,6 +141,21 @@ bool UiAdapter::shouldHandleAction_(UiAction action, uint32_t now_ms)
     lastActionMs_[index] = now_ms;
     hasAction_[index] = true;
     return true;
+}
+
+bool UiAdapter::isDebouncedAction_(UiAction action)
+{
+    switch (action) {
+        case UiAction::PrevTrack:
+        case UiAction::NextTrack:
+        case UiAction::Play:
+        case UiAction::Pause:
+        case UiAction::Stop:
+        case UiAction::Power:
+            return true;
+        default:
+            return false;
+    }
 }
 
 void UiAdapter::onUiAction_(UiAction action)
@@ -210,6 +228,89 @@ void UiAdapter::onUiAction_(UiAction action)
             }
             break;
         }
+        case UiAction::OpenDiscKeypad:
+            discEntryValue_ = 0;
+            discEntryLen_ = 0;
+            app_.setKeypadError(false);
+            break;
+        case UiAction::KeypadDigit0:
+        case UiAction::KeypadDigit1:
+        case UiAction::KeypadDigit2:
+        case UiAction::KeypadDigit3:
+        case UiAction::KeypadDigit4:
+        case UiAction::KeypadDigit5:
+        case UiAction::KeypadDigit6:
+        case UiAction::KeypadDigit7:
+        case UiAction::KeypadDigit8:
+        case UiAction::KeypadDigit9: {
+            if (discEntryLen_ < 3) {
+                uint8_t digit = 0;
+                switch (action) {
+                    case UiAction::KeypadDigit1:
+                        digit = 1;
+                        break;
+                    case UiAction::KeypadDigit2:
+                        digit = 2;
+                        break;
+                    case UiAction::KeypadDigit3:
+                        digit = 3;
+                        break;
+                    case UiAction::KeypadDigit4:
+                        digit = 4;
+                        break;
+                    case UiAction::KeypadDigit5:
+                        digit = 5;
+                        break;
+                    case UiAction::KeypadDigit6:
+                        digit = 6;
+                        break;
+                    case UiAction::KeypadDigit7:
+                        digit = 7;
+                        break;
+                    case UiAction::KeypadDigit8:
+                        digit = 8;
+                        break;
+                    case UiAction::KeypadDigit9:
+                        digit = 9;
+                        break;
+                    case UiAction::KeypadDigit0:
+                    default:
+                        digit = 0;
+                        break;
+                }
+                discEntryValue_ = static_cast<uint16_t>(discEntryValue_ * 10 + digit);
+                discEntryLen_++;
+            }
+            break;
+        }
+        case UiAction::KeypadBackspace:
+            if (discEntryLen_ > 0) {
+                discEntryValue_ = static_cast<uint16_t>(discEntryValue_ / 10);
+                discEntryLen_--;
+            }
+            break;
+        case UiAction::KeypadClear:
+            discEntryValue_ = 0;
+            discEntryLen_ = 0;
+            break;
+        case UiAction::KeypadGo: {
+            if (discEntryLen_ == 0 || discEntryValue_ < 1 || discEntryValue_ > 300) {
+                app_.setKeypadError(true);
+                Serial.println("intent: changeDisc ignored (invalid entry)");
+                break;
+            }
+            bool ok = intents.changeDisc(discEntryValue_);
+            Serial.println(ok ? "intent: changeDisc" : "intent: changeDisc (rejected)");
+            discEntryValue_ = 0;
+            discEntryLen_ = 0;
+            app_.setKeypadError(false);
+            app_.showNowPlaying();
+            break;
+        }
+        case UiAction::KeypadCancel:
+            discEntryValue_ = 0;
+            discEntryLen_ = 0;
+            break;
         default:
             break;
     }

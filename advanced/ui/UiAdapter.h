@@ -22,6 +22,7 @@ private:
     void onUiAction_(UiAction action);
     static size_t actionIndex_(UiAction action);
     bool shouldHandleAction_(UiAction action, uint32_t now_ms);
+    static bool isDebouncedAction_(UiAction action);
 
     SLinkSystem& system_;
     UiApp&       app_;
@@ -45,4 +46,6 @@ private:
 
     bool powerToggleKnown_ = false;
     bool powerIsOn_ = false;
+    uint16_t discEntryValue_ = 0;
+    uint8_t discEntryLen_ = 0;
 };

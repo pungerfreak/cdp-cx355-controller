@@ -1,0 +1,196 @@
+Milestone F (skip E): Disc selection via on-screen numeric keypad (no scrubbing)
+
+Context / Status
+- Milestones A–D.5 complete and integrated in main codebase.
+- Layout is now stable using fixed positioning (LV_LAYOUT_NONE + explicit sizes/positions).
+- Display is ROUND (240x240). UI should avoid putting critical controls in extreme corners that fall outside the visible circle.
+- We are skipping Milestone E (scrubber).
+- Milestone F goal is direct disc entry (1–300) via a keypad screen.
+
+Goal
+Add a “Disc” entry mode using a numeric keypad:
+- From Now Playing screen: tap a Disc button to open a keypad screen.
+- Enter disc number (1–300) and press “Go” to emit a disc-change intent.
+- “Cancel” returns to Now Playing without sending.
+- UI remains snapshot-driven for playback state; keypad is UI-local state only.
+
+Non-goals
+- No scrubbing UI.
+- No power state redesign.
+- No elapsed time logic.
+- No new SLink decoding/state changes required unless absolutely necessary.
+
+Output constraints
+- Do NOT print entire files in final output.
+- Provide diff-style summaries only: changed files + key edits + small snippets where needed.
+
+Files in scope
+Primary:
+- advanced/ui/UiApp.h
+- advanced/ui/UiApp.cpp
+- advanced/ui/UiAdapter.h
+- advanced/ui/UiAdapter.cpp
+- advanced/advanced.ino (only if wiring changes are needed; prefer not)
+
+Documentation:
+- advanced/ui/MILESTONE_F.md
+
+Architecture / Responsibilities
+UiApp (LVGL-only):
+- Owns both screens: Now Playing and Keypad.
+- Handles screen switching and keypad UI-local state (digit buffer string).
+- Emits user actions through the existing callback mechanism (no SLink includes).
+
+UiAdapter (SLink-aware):
+- Receives UiActions from UiApp.
+- For disc entry: maintains no UI, just handles “Go” action by reading UiApp’s current entered disc value OR
+  by tracking digits based on UiActions (recommended: track digits in UiAdapter so UiApp stays dumb).
+- Sends intent to SLinkCommandIntentSource:
+  - changeDisc(discNum) (or whichever intent method exists in your codebase)
+- No optimistic UI state changes.
+
+Important constraint (ROUND display)
+- Place keypad and buttons within an inner safe circle.
+- Use an inset margin (suggest 18–24 px) so buttons don’t land in clipped corners.
+- Prefer centered keypad grid.
+
+UI Behavior Requirements
+
+1) Now Playing screen changes
+- Add a “Disc” button (if not already present). Location:
+  - near bottom area above controls, or left of Power, but inside round safe area.
+- On click: switch to keypad screen.
+
+2) Keypad screen layout (fixed positioning; no flex)
+- A top label: “Select Disc”
+- A large entry display showing current typed digits (e.g., “___”, “12”, “300”)
+- Key grid: digits 1–9, 0, Backspace, Clear
+- Action buttons: “Go” and “Cancel”
+- All elements positioned explicitly (LV_LAYOUT_NONE); do not use flex/grid.
+
+Suggested safe-area geometry (240x240 round)
+- Use x/y inset of 20 for most elements.
+- Keep interactive buttons at least 36x36; preferred ~44x44 where possible.
+
+3) Keypad input rules
+- Accept up to 3 digits.
+- Leading zeros are allowed while typing but normalize on Go (e.g., “007” => 7).
+- Valid range: 1..300.
+- If invalid on Go:
+  - do NOT send intent
+  - show a small inline error label “Enter 1–300” (UI-only)
+- Cancel clears keypad buffer and returns to Now Playing.
+
+4) Screen switching rules
+- Entering keypad: buffer starts empty.
+- On Go success (intent emitted): return to Now Playing immediately (do not wait for disc-change completion).
+  (This is not optimistic state; it’s just navigation.)
+- On Cancel: return without sending.
+
+UiAction plan (keep callback signature unchanged)
+Current callback is: cb(UiAction action, void* user)
+No payload allowed. Therefore implement disc entry as a sequence of actions:
+
+In UiApp.h:
+- Extend UiAction enum to include:
+  - OpenDiscKeypad
+  - KeypadDigit0 ... KeypadDigit9
+  - KeypadBackspace
+  - KeypadClear
+  - KeypadGo
+  - KeypadCancel
+
+UiApp emits these actions on button clicks.
+
+Where to keep the typed number?
+Option A (preferred): UiAdapter keeps typed digits
+- UiAdapter listens to KeypadDigitN/Backspace/Clear and maintains:
+    uint16_t discEntryValue
+    uint8_t discEntryLen
+  and exposes a method to UiApp to display it? (avoid two-way dependency)
+Better: UiApp keeps the visible buffer string and UiAdapter separately keeps the numeric buffer, both updated from the same actions.
+This keeps UiApp UI-only and avoids new interfaces.
+
+Option B: UiApp keeps buffer and exposes getter
+- Add UiApp::getDiscEntryText() or UiApp::getDiscEntryValue()
+This is acceptable if it doesn’t introduce SLink includes.
+
+Pick Option A unless it becomes awkward.
+
+Implementation details
+
+UiApp implementation
+- Add two “screens” (LVGL objects) or use a single root and hide/show groups:
+  - nowPlayingRoot_
+  - keypadRoot_
+- Provide private helpers:
+  - showNowPlaying_()
+  - showKeypad_()
+  - updateKeypadDisplay_(const char* text, bool error)
+
+- Keypad buttons:
+  - Each digit button emits the corresponding UiAction.
+  - Backspace/Clear/Go/Cancel emit corresponding UiAction.
+  - UiApp maintains the displayed buffer string locally (max 3 chars).
+    NOTE: UiAdapter will also track digits; that is fine.
+
+- Ensure no layout changes in render():
+  - Only label text updates (now playing snapshot labels).
+  - Keypad display updates only when keypad buttons are pressed.
+
+UiAdapter implementation
+- Extend UiAdapter::onUiAction_(UiAction action):
+  - On OpenDiscKeypad: clear adapter’s disc-entry buffer (len=0, value=0).
+  - On KeypadDigitN:
+      if len < 3: value = value*10 + N; len++
+  - On KeypadBackspace:
+      if len>0: value/=10; len--
+  - On KeypadClear:
+      value=0; len=0
+  - On KeypadGo:
+      if len==0: invalid -> call UiApp method to show error (UI-only), do not send
+      else normalize value (already normalized) and validate 1..300
+        if valid: emit intent changeDisc(value)
+                 (log it)
+                 (optionally) ask UiApp to clear error
+        if invalid: show error via UiApp (UI-only), do not send
+  - On KeypadCancel:
+      clear buffer
+
+NOTE: UiAdapter calling into UiApp for “show error” is allowed because UiApp is UI-only, but keep it minimal:
+- Add UiApp::setKeypadError(bool on) or UiApp::setKeypadErrorText(const char*) if needed.
+- Do not make UiApp depend on SLink.
+
+Round display reminder
+- When placing keypad grid, avoid corners:
+  - Keep x>=20 and x+w<=220
+  - Keep y>=20 and y+h<=220
+- Prefer centered grid with symmetric padding.
+
+Acceptance criteria
+- Build succeeds.
+- Now Playing has a Disc button.
+- Disc button opens keypad screen.
+- Digits enter/display correctly (up to 3 digits).
+- Backspace and Clear work.
+- Go validates 1..300:
+  - valid => emits disc change intent and returns to Now Playing
+  - invalid => shows inline error and stays on keypad
+- Cancel returns to Now Playing without emitting intent.
+- No flex layout is used; fixed positioning only.
+- Nothing essential is clipped by the round display (respect inset margin).
+
+Documentation
+- Add advanced/ui/MILESTONE_F.md describing:
+  - UI flow
+  - UiAction additions
+  - validation rules
+  - note that scrubbing is intentionally skipped
+
+Output requested (no full files)
+- List of changed files
+- Per-file diff summary (what changed)
+- Small snippets for:
+  - UiAction enum additions
+  - UiAdapter keypad buffer logic
+  - Keypad layout positioning approach
