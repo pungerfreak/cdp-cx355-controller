@@ -18,4 +18,5 @@ private:
   SLinkIntentQueue& _queue;
   SLinkIntentArbiter& _arbiter;
   SLinkUnitCommandSender& _sender;
+  uint32_t _retryAtUs = 0;
 };

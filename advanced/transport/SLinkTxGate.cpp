@@ -15,6 +15,31 @@ bool SLinkTxGate::canTransmit(uint32_t nowUs) const {
   return true;
 }
 
+uint32_t SLinkTxGate::nextTransmitUs(uint32_t nowUs) const {
+  if (_protocolAllowsTx && canTransmit(nowUs)) return nowUs;
+
+  uint32_t candidate = nowUs;
+  if (nowUs < _backoffUntilUs) {
+    candidate = _backoffUntilUs;
+  }
+
+  uint32_t lastActivity = _bus.lastActivityUs();
+  uint32_t afterIdleGap = lastActivity + _idleGapUs;
+  if (afterIdleGap > candidate) candidate = afterIdleGap;
+
+  uint32_t lastRx = _bus.lastRxEdgeUs();
+  uint32_t afterGuard = lastRx + _guardTimeUs;
+  if (afterGuard > candidate) candidate = afterGuard;
+
+  // If TX is disabled at the protocol level, there isn't a concrete "next"
+  // time; return a short delay to avoid busy retries.
+  if (!_protocolAllowsTx && candidate == nowUs) {
+    candidate = nowUs + 10000u;
+  }
+
+  return candidate;
+}
+
 bool SLinkTxGate::shouldAbort() const {
   return _bus.rxDuringTx();
 }

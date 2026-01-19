@@ -3,6 +3,14 @@
 SLinkUnitCommandSender::SLinkUnitCommandSender(SLinkTx& tx, uint8_t unit)
     : _tx(tx), _unit(unit) {}
 
+bool SLinkUnitCommandSender::canSendNow(uint32_t nowUs) const {
+  return _tx.canTransmit(nowUs);
+}
+
+uint32_t SLinkUnitCommandSender::nextSendUs(uint32_t nowUs) const {
+  return _tx.nextTransmitUs(nowUs);
+}
+
 void SLinkUnitCommandSender::setCurrentDisc(uint16_t disc) {
   if (disc == 0 || disc > 300) return;
   _currentDisc = disc;

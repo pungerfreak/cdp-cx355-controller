@@ -8,6 +8,14 @@ void SLinkTx::begin() {
   _txGate.begin();
 }
 
+bool SLinkTx::canTransmit(uint32_t nowUs) const {
+  return _txGate.canTransmit(nowUs);
+}
+
+uint32_t SLinkTx::nextTransmitUs(uint32_t nowUs) const {
+  return _txGate.nextTransmitUs(nowUs);
+}
+
 void SLinkTx::driveLow() {
   digitalWrite(_pin, HIGH);
 }

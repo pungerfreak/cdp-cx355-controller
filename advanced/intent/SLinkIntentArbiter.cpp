@@ -65,7 +65,8 @@ bool isBetterCandidate(const IntentCandidate& candidate,
 }  // namespace
 
 bool SLinkIntentArbiter::selectNext(SLinkIntentQueue& queue,
-                                    SLinkCommandIntent& intent) {
+                                    SLinkCommandIntent& intent,
+                                    uint8_t& offsetOut) {
   if (queue.isEmpty()) return false;
 
   const uint32_t now = millis();
@@ -110,11 +111,14 @@ bool SLinkIntentArbiter::selectNext(SLinkIntentQueue& queue,
   if (!found) return false;
 
   uint32_t enqueuedAt = 0;
-  if (!queue.removeAt(best.offset, intent, enqueuedAt)) return false;
+  if (!queue.peekAt(best.offset, intent, enqueuedAt)) return false;
+  offsetOut = best.offset;
+  return true;
+}
 
-  uint8_t index = static_cast<uint8_t>(intent.type);
+void SLinkIntentArbiter::noteDispatched(SLinkIntentType type, uint32_t now) {
+  uint8_t index = static_cast<uint8_t>(type);
   if (index < kIntentTypeCount) {
     _lastDispatchMs[index] = now;
   }
-  return true;
 }

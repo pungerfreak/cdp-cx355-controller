@@ -7,7 +7,8 @@ class SLinkIntentArbiter {
 public:
   SLinkIntentArbiter() = default;
 
-  bool selectNext(SLinkIntentQueue& queue, SLinkCommandIntent& intent);
+  bool selectNext(SLinkIntentQueue& queue, SLinkCommandIntent& intent, uint8_t& offset);
+  void noteDispatched(SLinkIntentType type, uint32_t now = millis());
 
 private:
   static constexpr uint8_t kIntentTypeCount = 7;

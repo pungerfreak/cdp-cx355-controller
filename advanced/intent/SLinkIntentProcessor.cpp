@@ -6,11 +6,37 @@ SLinkIntentProcessor::SLinkIntentProcessor(SLinkIntentQueue& queue,
     : _queue(queue), _arbiter(arbiter), _sender(sender) {}
 
 void SLinkIntentProcessor::poll() {
-  SLinkCommandIntent intent;
-  while (_arbiter.selectNext(_queue, intent)) {
+  const uint32_t nowUs = micros();
+  if (_retryAtUs != 0 && (int32_t)(nowUs - _retryAtUs) < 0) {
+    return;
+  }
+  _retryAtUs = 0;
+
+  while (true) {
+    SLinkCommandIntent intent;
+    uint8_t offset = 0;
+    if (!_arbiter.selectNext(_queue, intent, offset)) return;
+
+    const uint32_t attemptUs = micros();
+    if (!_sender.canSendNow(attemptUs)) {
+      _retryAtUs = _sender.nextSendUs(attemptUs);
+      return;
+    }
+
     if (!dispatch(intent)) {
-      _queue.push(intent);
-      break;
+      const uint32_t failedAtUs = micros();
+      uint32_t nextUs = _sender.nextSendUs(failedAtUs);
+      if (nextUs < (failedAtUs + 1000u)) nextUs = failedAtUs + 1000u;
+      _retryAtUs = nextUs;
+      return;
+    }
+
+    SLinkCommandIntent removed;
+    uint32_t enqueuedAt = 0;
+    if (_queue.removeAt(offset, removed, enqueuedAt)) {
+      _arbiter.noteDispatched(removed.type);
+    } else {
+      return;
     }
   }
 }

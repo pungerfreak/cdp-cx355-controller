@@ -8,6 +8,7 @@ public:
 
   void begin();
   bool canTransmit(uint32_t nowUs) const;
+  uint32_t nextTransmitUs(uint32_t nowUs) const;
   bool shouldAbort() const;
   void beginTx(uint32_t nowUs);
   void endTx(uint32_t nowUs, bool aborted);

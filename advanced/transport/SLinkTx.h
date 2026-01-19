@@ -7,6 +7,8 @@ public:
   explicit SLinkTx(uint8_t pin, SLinkTxGate& gate);
 
   void begin();
+  bool canTransmit(uint32_t nowUs) const;
+  uint32_t nextTransmitUs(uint32_t nowUs) const;
   bool sendBytes(const uint8_t* data, uint16_t len);
 
 private:

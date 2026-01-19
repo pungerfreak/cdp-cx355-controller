@@ -12,6 +12,8 @@ public:
   explicit SLinkUnitCommandSender(SLinkTx& tx,
                                   uint8_t unit = SLINK_ADDR_CONTROLLER);
 
+  bool canSendNow(uint32_t nowUs) const;
+  uint32_t nextSendUs(uint32_t nowUs) const;
   void setCurrentDisc(uint16_t disc);
   void setTxCallback(TxCallback cb, void* context);
   bool send(const SLinkUnitCommand& cmd);
