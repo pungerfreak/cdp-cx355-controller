@@ -94,6 +94,11 @@ void UiApp::init()
     bindings_[19] = {UiAction::KeypadGo, this};
     bindings_[20] = {UiAction::KeypadCancel, this};
 
+    auto wire_press_release = [&](lv_obj_t* obj, ActionBinding* binding) {
+        lv_obj_add_event_cb(obj, UiApp::onButtonEvent_, LV_EVENT_PRESSED, binding);
+        lv_obj_add_event_cb(obj, UiApp::onButtonEvent_, LV_EVENT_RELEASED, binding);
+    };
+
     lv_obj_t* controls = lv_obj_create(nowPlayingRoot_);
     lv_obj_set_size(controls, controls_w, 40);
     lv_obj_set_pos(controls, (screen_w - controls_w) / 2, 146);
@@ -112,7 +117,7 @@ void UiApp::init()
         lv_obj_t* btn = lv_btn_create(controls);
         lv_obj_set_size(btn, btn_w, btn_h);
         lv_obj_set_pos(btn, index * (btn_w + btn_gap), btn_y);
-        lv_obj_add_event_cb(btn, UiApp::onButtonEvent_, LV_EVENT_CLICKED, binding);
+        wire_press_release(btn, binding);
         lv_obj_t* label = lv_label_create(btn);
         lv_label_set_text(label, text);
         lv_obj_center(label);
@@ -127,7 +132,7 @@ void UiApp::init()
     lv_obj_t* powerBtn = lv_btn_create(nowPlayingRoot_);
     lv_obj_set_size(powerBtn, 42, 32);
     lv_obj_set_pos(powerBtn, 188, 80);
-    lv_obj_add_event_cb(powerBtn, UiApp::onButtonEvent_, LV_EVENT_CLICKED, &bindings_[5]);
+    wire_press_release(powerBtn, &bindings_[5]);
     lv_obj_t* powerLabel = lv_label_create(powerBtn);
     lv_label_set_text(powerLabel, "Power");
     lv_obj_center(powerLabel);
@@ -135,7 +140,7 @@ void UiApp::init()
     lv_obj_t* discBtn = lv_btn_create(nowPlayingRoot_);
     lv_obj_set_size(discBtn, 56, 32);
     lv_obj_set_pos(discBtn, (screen_w - 56) / 2, 188);
-    lv_obj_add_event_cb(discBtn, UiApp::onButtonEvent_, LV_EVENT_CLICKED, &bindings_[6]);
+    wire_press_release(discBtn, &bindings_[6]);
     lv_obj_t* discLabel = lv_label_create(discBtn);
     lv_label_set_text(discLabel, "Disc");
     lv_obj_center(discLabel);
@@ -177,7 +182,7 @@ void UiApp::init()
         lv_obj_set_pos(btn,
                        key_grid_x + col * (key_w + key_gap),
                        key_grid_y + row * (key_h + key_gap));
-        lv_obj_add_event_cb(btn, UiApp::onButtonEvent_, LV_EVENT_CLICKED, binding);
+        wire_press_release(btn, binding);
         lv_obj_t* label = lv_label_create(btn);
         lv_label_set_text(label, text);
         lv_obj_center(label);
@@ -290,7 +295,8 @@ void UiApp::showNowPlaying()
 
 void UiApp::onButtonEvent_(lv_event_t* e)
 {
-    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+    lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_PRESSED && code != LV_EVENT_RELEASED) {
         return;
     }
 
@@ -298,7 +304,9 @@ void UiApp::onButtonEvent_(lv_event_t* e)
     if (binding == nullptr || binding->app == nullptr) {
         return;
     }
-    binding->app->emitAction_(binding->action);
+    if (code == LV_EVENT_RELEASED) {
+        binding->app->emitAction_(binding->action);
+    }
 }
 
 void UiApp::emitAction_(UiAction action)

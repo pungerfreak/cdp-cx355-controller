@@ -5,6 +5,7 @@
 // #define USE_ARDUINO_GFX_LIBRARY
 
 #include "lv_xiao_round_screen.h"
+#include "touch_gap_filter.h"
 
 #include "io/SLinkCommandConsole.h"
 #include "io/SLinkPrettyPrinter.h"
@@ -43,6 +44,7 @@ void setup() {
 
   lv_xiao_disp_init();
   lv_xiao_touch_init();
+  install_touch_gap_filter();
 
   app.init();
   slinkSystem.addCommandInput(slinkConsole);
