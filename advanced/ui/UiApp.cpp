@@ -21,33 +21,45 @@ void UiApp::init()
     lv_obj_t* screen = lv_screen_active();
 
     lv_obj_t* root = lv_obj_create(screen);
-    lv_obj_set_size(root, 220, 220);
-    lv_obj_center(root);
-    lv_obj_set_flex_flow(root, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(root, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_size(root, LV_HOR_RES, LV_VER_RES);
+    lv_obj_set_pos(root, 0, 0);
+    lv_obj_set_layout(root, LV_LAYOUT_NONE);
+    lv_obj_set_style_pad_all(root, 0, 0);
+    lv_obj_set_style_pad_row(root, 0, 0);
+    lv_obj_set_style_pad_column(root, 0, 0);
+    lv_obj_clear_flag(root, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_bg_opa(root, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_opa(root, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_pad_all(root, 4, 0);
-    lv_obj_set_style_pad_row(root, 4, 0);
+
+    const lv_coord_t screen_w = LV_HOR_RES;
+    const lv_coord_t header_w = 140;
+    const lv_coord_t time_w = 170;
+    const lv_coord_t meta_w = 160;
+    const lv_coord_t state_w = 200;
+    const lv_coord_t controls_w = 200;
 
     labelHeader_ = lv_label_create(root);
-    lv_obj_set_width(labelHeader_, 220);
+    lv_obj_set_size(labelHeader_, header_w, 20);
+    lv_obj_set_pos(labelHeader_, (screen_w - header_w) / 2, 24);
     lv_obj_set_style_text_align(labelHeader_, LV_TEXT_ALIGN_CENTER, 0);
     lv_label_set_text(labelHeader_, "Disc - | Track -");
 
     labelTime_ = lv_label_create(root);
-    lv_obj_set_width(labelTime_, 220);
+    lv_obj_set_size(labelTime_, time_w, 18);
+    lv_obj_set_pos(labelTime_, (screen_w - time_w) / 2, 46);
     lv_obj_set_style_text_align(labelTime_, LV_TEXT_ALIGN_CENTER, 0);
     lv_label_set_text(labelTime_, "00:00");
 
     labelMeta_ = lv_label_create(root);
-    lv_obj_set_width(labelMeta_, 220);
+    lv_obj_set_size(labelMeta_, meta_w, 56);
+    lv_obj_set_pos(labelMeta_, 20, 66);
     lv_obj_set_style_text_align(labelMeta_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_long_mode(labelMeta_, LV_LABEL_LONG_WRAP);
+    lv_label_set_long_mode(labelMeta_, LV_LABEL_LONG_DOT);
     lv_label_set_text(labelMeta_, "- -\n-");
 
     labelState_ = lv_label_create(root);
-    lv_obj_set_width(labelState_, 220);
+    lv_obj_set_size(labelState_, state_w, 18);
+    lv_obj_set_pos(labelState_, (screen_w - state_w) / 2, 124);
     lv_obj_set_style_text_align(labelState_, LV_TEXT_ALIGN_CENTER, 0);
     lv_label_set_text(labelState_, "PAUSED");
 
@@ -59,30 +71,38 @@ void UiApp::init()
     bindings_[5] = {UiAction::Power, this};
 
     lv_obj_t* controls = lv_obj_create(root);
-    lv_obj_set_size(controls, 220, 36);
-    lv_obj_set_flex_flow(controls, LV_FLEX_FLOW_ROW);
-    lv_obj_set_flex_align(controls, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_size(controls, controls_w, 40);
+    lv_obj_set_pos(controls, (screen_w - controls_w) / 2, 146);
+    lv_obj_set_layout(controls, LV_LAYOUT_NONE);
     lv_obj_set_style_bg_opa(controls, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_opa(controls, LV_OPA_TRANSP, 0);
     lv_obj_set_style_pad_all(controls, 0, 0);
+    lv_obj_clear_flag(controls, LV_OBJ_FLAG_SCROLLABLE);
 
-    auto add_button = [&](const char* text, ActionBinding* binding) {
+    const lv_coord_t btn_w = 40;
+    const lv_coord_t btn_h = 40;
+    const lv_coord_t btn_gap = 0;
+    const lv_coord_t btn_y = 0;
+
+    auto add_button = [&](const char* text, ActionBinding* binding, int index) {
         lv_obj_t* btn = lv_btn_create(controls);
-        lv_obj_set_size(btn, 40, 32);
+        lv_obj_set_size(btn, btn_w, btn_h);
+        lv_obj_set_pos(btn, index * (btn_w + btn_gap), btn_y);
         lv_obj_add_event_cb(btn, UiApp::onButtonEvent_, LV_EVENT_CLICKED, binding);
         lv_obj_t* label = lv_label_create(btn);
         lv_label_set_text(label, text);
         lv_obj_center(label);
     };
 
-    add_button("Prev", &bindings_[0]);
-    add_button("Play", &bindings_[1]);
-    add_button("Pause", &bindings_[2]);
-    add_button("Stop", &bindings_[3]);
-    add_button("Next", &bindings_[4]);
+    add_button("Prev", &bindings_[0], 0);
+    add_button("Play", &bindings_[1], 1);
+    add_button("Pause", &bindings_[2], 2);
+    add_button("Stop", &bindings_[3], 3);
+    add_button("Next", &bindings_[4], 4);
 
     lv_obj_t* powerBtn = lv_btn_create(root);
-    lv_obj_set_size(powerBtn, 68, 28);
+    lv_obj_set_size(powerBtn, 42, 32);
+    lv_obj_set_pos(powerBtn, 188, 80);
     lv_obj_add_event_cb(powerBtn, UiApp::onButtonEvent_, LV_EVENT_CLICKED, &bindings_[5]);
     lv_obj_t* powerLabel = lv_label_create(powerBtn);
     lv_label_set_text(powerLabel, "Power");
