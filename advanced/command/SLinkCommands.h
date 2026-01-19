@@ -5,6 +5,7 @@ enum SLinkCommandId : uint8_t {
   PLAY = 0x00,
   STOP = 0x01,
   PAUSE = 0x02,
+  GET_CURRENT_DISC = 0x45,
   POWER_ON = 0x2E,
   POWER_OFF = 0x2F,
 };

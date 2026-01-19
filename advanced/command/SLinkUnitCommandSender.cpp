@@ -52,6 +52,12 @@ bool SLinkUnitCommandSender::changeTrack(uint8_t track) {
   return send(cmd);
 }
 
+bool SLinkUnitCommandSender::getCurrentDisc() {
+  if (!sendGetCurrentDisc(0x90)) return false;
+  setStage(CurrentDiscStage::BankARequested);
+  return true;
+}
+
 bool SLinkUnitCommandSender::send(const SLinkUnitCommand& cmd) {
   SLinkUnitCommand resolved = cmd;
   if (!resolveChange(resolved)) return false;
@@ -63,6 +69,8 @@ bool SLinkUnitCommandSender::send(const SLinkUnitCommand& cmd) {
   if (!_tx.sendBytes(frame, len)) return false;
   if (resolved.type == SLinkUnitCommandType::ChangeDisc) {
     setCurrentDisc(resolved.disc);
+  } else if (resolved.type == SLinkUnitCommandType::GetCurrentDisc) {
+    setStage(CurrentDiscStage::BankARequested);
   }
   return true;
 }
@@ -87,4 +95,32 @@ bool SLinkUnitCommandSender::resolveChange(SLinkUnitCommand& cmd) const {
     return true;
   }
   return true;
+}
+
+bool SLinkUnitCommandSender::sendGetCurrentDisc(uint8_t unit) {
+  SLinkUnitCommand cmd{SLinkUnitCommandType::GetCurrentDisc, 0, 0, unit};
+  uint8_t frame[2] = {};
+  uint16_t len = 0;
+  if (!_frameBuilder.build(cmd, frame, len, unit)) return false;
+  if (_txCallback) _txCallback(frame, len, _txCallbackCtx);
+  return _tx.sendBytes(frame, len);
+}
+
+void SLinkUnitCommandSender::requestCurrentDiscBankB() {
+  if (currentDiscStage() != CurrentDiscStage::BankARequested) return;
+  if (sendGetCurrentDisc(0x93)) {
+    setStage(CurrentDiscStage::BankBRequested);
+  }
+}
+
+void SLinkUnitCommandSender::completeCurrentDiscRequest() {
+  setStage(CurrentDiscStage::Idle);
+}
+
+void SLinkUnitCommandSender::setStage(CurrentDiscStage stage) {
+  _currentDiscStage = stage;
+}
+
+SLinkUnitCommandSender::CurrentDiscStage SLinkUnitCommandSender::currentDiscStage() const {
+  return _currentDiscStage;
 }

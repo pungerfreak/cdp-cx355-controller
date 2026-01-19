@@ -134,6 +134,24 @@ void SLinkUnitEventPublisher::changingTrack(const SLinkDiscInfo& disc,
           debug);
 }
 
+void SLinkUnitEventPublisher::currentDiscInfo(const SLinkDiscInfo& disc,
+                                              const SLinkTrackInfo& track,
+                                              const SLinkDebugInfo* debug) {
+  publish(SLinkUnitEventType::CurrentDiscInfo,
+          disc,
+          track,
+          SLinkTransportState::Unchanged,
+          debug);
+}
+
+void SLinkUnitEventPublisher::currentDiscBankSwitchNeeded(const SLinkDebugInfo* debug) {
+  publish(SLinkUnitEventType::CurrentDiscBankSwitchNeeded,
+          emptyDisc(),
+          emptyTrack(),
+          SLinkTransportState::Unchanged,
+          debug);
+}
+
 void SLinkUnitEventPublisher::unknown(const SLinkDebugInfo* debug) {
   publish(SLinkUnitEventType::Unknown,
           emptyDisc(),

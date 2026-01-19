@@ -135,6 +135,22 @@ void SLinkPrettyPrinter::changingTrack(const SLinkDiscInfo& disc,
   _out.println();
 }
 
+void SLinkPrettyPrinter::currentDiscInfo(const SLinkDiscInfo& disc,
+                                         const SLinkTrackInfo& track,
+                                         const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.print("CURRENT_DISC_INFO");
+  printDisc(disc);
+  printTrack(track);
+  printLength(track);
+  _out.println();
+}
+
+void SLinkPrettyPrinter::currentDiscBankSwitchNeeded(const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.println("CURRENT_DISC_BANK_B");
+}
+
 void SLinkPrettyPrinter::unknown(const SLinkDebugInfo* debug) {
   (void)debug;
 }

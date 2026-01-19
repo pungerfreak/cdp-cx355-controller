@@ -14,6 +14,8 @@ enum class SLinkUnitEventType : uint8_t {
   TransportStateChanged,
   DiscChanged,
   TrackChanged,
+  CurrentDiscInfo,
+  CurrentDiscBankSwitchNeeded,
   Unknown
 };
 

@@ -24,11 +24,26 @@ public:
   bool powerOff() override;
   bool changeDisc(uint16_t disc) override;
   bool changeTrack(uint8_t track) override;
+  bool getCurrentDisc() override;
+
+  void requestCurrentDiscBankB();
+  void completeCurrentDiscRequest();
 
 private:
   bool sendSimple(SLinkUnitCommandType type);
   bool resolveChange(SLinkUnitCommand& cmd) const;
+  bool sendGetCurrentDisc(uint8_t unit);
 
+  enum class CurrentDiscStage : uint8_t {
+    Idle = 0,
+    BankARequested,
+    BankBRequested
+  };
+
+  void setStage(CurrentDiscStage stage);
+  CurrentDiscStage currentDiscStage() const;
+
+  CurrentDiscStage _currentDiscStage = CurrentDiscStage::Idle;
   SLinkTx& _tx;
   SLinkFrameBuilder _frameBuilder;
   uint8_t _unit;

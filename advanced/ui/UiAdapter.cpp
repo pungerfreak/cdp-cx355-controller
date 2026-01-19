@@ -40,9 +40,11 @@ void UiAdapter::onUnitEvent(const SLinkUnitEvent& e)
     switch (e.type) {
         case SLinkUnitEventType::DiscChanged:
         case SLinkUnitEventType::TrackChanged:
+        case SLinkUnitEventType::CurrentDiscInfo:
         case SLinkUnitEventType::TransportStateChanged:
             refreshFromSnapshot_();
             break;
+        case SLinkUnitEventType::CurrentDiscBankSwitchNeeded:
         case SLinkUnitEventType::Unknown: {
             uint32_t now_ms = millis();
             if (now_ms - lastRefreshMs_ >= MIN_REFRESH_MS) {

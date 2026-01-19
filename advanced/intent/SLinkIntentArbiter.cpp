@@ -9,11 +9,13 @@ const SLinkIntentArbiter::Policy& SLinkIntentArbiter::policyFor(
   constexpr uint32_t kThrottleTransportMs = 250;
   constexpr uint32_t kThrottlePowerMs = 500;
   constexpr uint32_t kThrottleSelectMs = 750;
+  constexpr uint32_t kThrottleStatusMs = 500;
 
   constexpr uint32_t kExpireTransportMs = 5000;
   constexpr uint32_t kExpirePowerMs = 8000;
   constexpr uint32_t kExpireChangeDiscMs = 8000;
   constexpr uint32_t kExpireChangeTrackMs = 5000;
+  constexpr uint32_t kExpireGetCurrentDiscMs = 4000;
 
   static const Policy kPolicies[] = {
       {kPriorityMedium, kThrottleTransportMs, kExpireTransportMs},  // Play
@@ -22,7 +24,8 @@ const SLinkIntentArbiter::Policy& SLinkIntentArbiter::policyFor(
       {kPriorityHigh, kThrottlePowerMs, kExpirePowerMs},            // PowerOn
       {kPriorityHigh, kThrottlePowerMs, kExpirePowerMs},            // PowerOff
       {kPriorityLow, kThrottleSelectMs, kExpireChangeDiscMs},       // ChangeDisc
-      {kPriorityLow, kThrottleSelectMs, kExpireChangeTrackMs}       // ChangeTrack
+      {kPriorityLow, kThrottleSelectMs, kExpireChangeTrackMs},      // ChangeTrack
+      {kPriorityHigh, kThrottleStatusMs, kExpireGetCurrentDiscMs}   // GetCurrentDisc
   };
   static_assert(sizeof(kPolicies) / sizeof(kPolicies[0]) ==
                     SLinkIntentArbiter::kIntentTypeCount,

@@ -7,6 +7,8 @@ bool SLinkFrameBuilder::build(const SLinkUnitCommand& cmd,
   if (!out) return false;
   len = 0;
 
+  const uint8_t unitByte = cmd.unitOverride ? cmd.unitOverride : unit;
+
   switch (cmd.type) {
     case SLinkUnitCommandType::Play:
     case SLinkUnitCommandType::Stop:
@@ -34,7 +36,7 @@ bool SLinkFrameBuilder::build(const SLinkUnitCommand& cmd,
           break;
       }
       uint8_t frame[2];
-      encodeCommand({unit, id}, frame);
+      encodeCommand({unitByte, id}, frame);
       out[0] = frame[0];
       out[1] = frame[1];
       len = 2;
@@ -42,17 +44,23 @@ bool SLinkFrameBuilder::build(const SLinkUnitCommand& cmd,
     }
     case SLinkUnitCommandType::ChangeDisc:
     case SLinkUnitCommandType::ChangeTrack: {
-      uint8_t unitByte = 0;
+      uint8_t discUnit = 0;
       uint8_t discRaw = 0;
       uint8_t trackRaw = 0;
-      if (!encodeDiscUnit(cmd.disc, unitByte)) return false;
+      if (!encodeDiscUnit(cmd.disc, discUnit)) return false;
       if (!encodeDiscRaw(cmd.disc, discRaw)) return false;
       if (!encodeBcd(cmd.track, trackRaw)) return false;
-      out[0] = unitByte;
+      out[0] = discUnit;
       out[1] = 0x50;
       out[2] = discRaw;
       out[3] = trackRaw;
       len = 4;
+      return true;
+    }
+    case SLinkUnitCommandType::GetCurrentDisc: {
+      out[0] = unitByte;
+      out[1] = static_cast<uint8_t>(GET_CURRENT_DISC);
+      len = 2;
       return true;
     }
   }

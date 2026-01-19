@@ -17,6 +17,8 @@ const SLinkPattern kPatterns[] = {
   {"DISC_READY",    "cmd", 3, 0, 2, {0x00, 0x52}, {0x00, 0xFF}},
   {"LOADING_DISC",  "cmd", 3, 0, 2, {0x00, 0x54}, {0x00, 0xFF}},
   {"DISC_LOADED",   "cmd", 3, 0, 2, {0x00, 0x58}, {0x00, 0xFF}},
+  {"CURRENT_DISC_BANK_B", "cmd", 2, 0, 2, {0x00, 0x15}, {0x00, 0xFF}},
+  {"CURRENT_DISC_INFO", "cmd", 6, 0, 2, {0x00, 0x62}, {0x00, 0xFF}},
   // Add known codes here as you confirm them from the S-Link spec.
   // {"Example Name", "Optional note", minLen, maxLen, prefixLen,
   //  {0x01, 0x02}, {0xFF, 0xFF}},
@@ -26,11 +28,11 @@ const SLinkPattern kPatterns[] = {
 constexpr uint16_t kPatternCount = sizeof(kPatterns) / sizeof(kPatterns[0]);
 
 bool isDiscCommand(uint8_t cmd) {
-  return (cmd == 0x50 || cmd == 0x52 || cmd == 0x54 || cmd == 0x58);
+  return (cmd == 0x50 || cmd == 0x52 || cmd == 0x54 || cmd == 0x58 || cmd == 0x62);
 }
 
 bool isDiscTrackCommand(uint8_t cmd) {
-  return (cmd == 0x50);
+  return (cmd == 0x50 || cmd == 0x62);
 }
 
 bool decodeBcd(uint8_t raw, uint8_t& value);

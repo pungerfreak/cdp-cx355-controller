@@ -207,6 +207,16 @@ void SLinkDebugPrinter::changingTrack(const SLinkDiscInfo& disc,
   printLine("CHANGING_TRACK", &disc, &track, debug);
 }
 
+void SLinkDebugPrinter::currentDiscInfo(const SLinkDiscInfo& disc,
+                                        const SLinkTrackInfo& track,
+                                        const SLinkDebugInfo* debug) {
+  printLine("CURRENT_DISC_INFO", &disc, &track, debug);
+}
+
+void SLinkDebugPrinter::currentDiscBankSwitchNeeded(const SLinkDebugInfo* debug) {
+  printLine("CURRENT_DISC_BANK_B", nullptr, nullptr, debug);
+}
+
 void SLinkDebugPrinter::unknown(const SLinkDebugInfo* debug) {
   printLine("UNKNOWN", nullptr, nullptr, debug);
 }

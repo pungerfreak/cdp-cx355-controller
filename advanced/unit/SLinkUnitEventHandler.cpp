@@ -114,6 +114,14 @@ void SLinkDispatcher::dispatch(const SLinkMessage& msg,
     iface.changingTrack(makeDiscInfo(msg), makeTrackInfo(msg), debug);
     return;
   }
+  if (nameIs(msg.name, "CURRENT_DISC_INFO")) {
+    iface.currentDiscInfo(makeDiscInfo(msg), makeTrackInfo(msg), debug);
+    return;
+  }
+  if (nameIs(msg.name, "CURRENT_DISC_BANK_B")) {
+    iface.currentDiscBankSwitchNeeded(debug);
+    return;
+  }
 
   iface.unknown(debug);
 }

@@ -31,6 +31,10 @@ bool SLinkIntentQueueAdapter::changeTrack(uint8_t track) {
   return enqueue({SLinkIntentType::ChangeTrack, 0, track});
 }
 
+bool SLinkIntentQueueAdapter::getCurrentDisc() {
+  return enqueue({SLinkIntentType::GetCurrentDisc});
+}
+
 bool SLinkIntentQueueAdapter::enqueue(SLinkCommandIntent intent) {
   return _queue.push(intent);
 }

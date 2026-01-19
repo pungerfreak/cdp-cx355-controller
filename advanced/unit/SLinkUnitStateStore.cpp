@@ -28,11 +28,16 @@ void SLinkUnitStateStore::onUnitEvent(const SLinkUnitEvent& event) {
       updateDisc(event.disc);
       updateTrack(event.track);
       break;
+    case SLinkUnitEventType::CurrentDiscInfo:
+      updateDisc(event.disc);
+      updateTrack(event.track);
+      break;
     case SLinkUnitEventType::TransportStateChanged:
       if (event.transport != SLinkTransportState::Unchanged) {
         _transport = event.transport;
       }
       break;
+    case SLinkUnitEventType::CurrentDiscBankSwitchNeeded:
     case SLinkUnitEventType::Unknown:
       break;
   }

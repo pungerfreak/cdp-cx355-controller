@@ -15,6 +15,13 @@ void SLinkCommandSenderStateSync::onUnitEvent(const SLinkUnitEvent& event) {
     case SLinkUnitEventType::TrackChanged:
       updateDisc(event.disc);
       break;
+    case SLinkUnitEventType::CurrentDiscInfo:
+      updateDisc(event.disc);
+      _sender.completeCurrentDiscRequest();
+      break;
+    case SLinkUnitEventType::CurrentDiscBankSwitchNeeded:
+      _sender.requestCurrentDiscBankB();
+      break;
     case SLinkUnitEventType::TransportStateChanged:
     case SLinkUnitEventType::Unknown:
       break;

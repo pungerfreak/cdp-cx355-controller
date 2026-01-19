@@ -8,11 +8,13 @@ enum class SLinkUnitCommandType : uint8_t {
   PowerOn,
   PowerOff,
   ChangeDisc,
-  ChangeTrack
+  ChangeTrack,
+  GetCurrentDisc
 };
 
 struct SLinkUnitCommand {
   SLinkUnitCommandType type;
   uint16_t disc = 0;
   uint8_t track = 0;
+  uint8_t unitOverride = 0;
 };

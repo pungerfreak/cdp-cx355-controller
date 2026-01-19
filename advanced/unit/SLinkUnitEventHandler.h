@@ -62,6 +62,10 @@ public:
   virtual void changingTrack(const SLinkDiscInfo& disc,
                              const SLinkTrackInfo& track,
                              const SLinkDebugInfo* debug) = 0;
+  virtual void currentDiscInfo(const SLinkDiscInfo& disc,
+                               const SLinkTrackInfo& track,
+                               const SLinkDebugInfo* debug) = 0;
+  virtual void currentDiscBankSwitchNeeded(const SLinkDebugInfo* debug) = 0;
   virtual void unknown(const SLinkDebugInfo* debug) = 0;
 };
 
