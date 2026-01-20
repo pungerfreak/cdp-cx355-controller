@@ -35,6 +35,10 @@ bool SLinkIntentQueueAdapter::getCurrentDisc() {
   return enqueue({SLinkIntentType::GetCurrentDisc});
 }
 
+bool SLinkIntentQueueAdapter::getStatus() {
+  return enqueue({SLinkIntentType::GetStatus});
+}
+
 bool SLinkIntentQueueAdapter::enqueue(SLinkCommandIntent intent) {
   return _queue.push(intent);
 }

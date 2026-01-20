@@ -122,6 +122,27 @@ void SLinkDispatcher::dispatch(const SLinkMessage& msg,
     iface.currentDiscBankSwitchNeeded(debug);
     return;
   }
+  if (nameIs(msg.name, "STATUS")) {
+    SLinkTransportState transport = SLinkTransportState::Unknown;
+    switch (msg.statusRaw) {
+      case 0x01:
+        transport = SLinkTransportState::Playing;
+        break;
+      case 0x02:
+        transport = SLinkTransportState::Paused;
+        break;
+      case 0x00:
+        transport = SLinkTransportState::Stopped;
+        break;
+      case 0x10:
+        transport = SLinkTransportState::PowerOff;
+        break;
+      default:
+        break;
+    }
+    iface.status(makeDiscInfo(msg), makeTrackInfo(msg), transport, debug);
+    return;
+  }
 
   iface.unknown(debug);
 }

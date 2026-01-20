@@ -27,6 +27,9 @@ struct SLinkMessage {
   const char* name = nullptr;
   const char* note = nullptr;
 
+  bool    hasStatus = false;
+  uint8_t statusRaw = 0;
+
   bool     hasDisc = false;
   uint8_t  discRaw = 0;
   bool     discValid = false;

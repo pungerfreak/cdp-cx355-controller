@@ -70,6 +70,9 @@ bool SLinkIntentProcessor::dispatch(const SLinkCommandIntent& intent) {
     case SLinkIntentType::GetCurrentDisc:
       cmd.type = SLinkUnitCommandType::GetCurrentDisc;
       break;
+    case SLinkIntentType::GetStatus:
+      cmd.type = SLinkUnitCommandType::GetStatus;
+      break;
   }
   return _sender.send(cmd);
 }

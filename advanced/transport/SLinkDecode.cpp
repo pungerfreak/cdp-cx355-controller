@@ -1,9 +1,11 @@
 #include "transport/SLinkDecode.h"
+#include <string.h>
 
 const char kSLinkUnknownName[] = "UNKNOWN";
 
 namespace {
 const SLinkPattern kPatterns[] = {
+  {"STATUS",        "cmd", 7, 7, 2, {0x98, 0x70}, {0xF8, 0xFF}},
   {"PLAY",          "cmd", 2, 0, 2, {0x00, 0x00}, {0x00, 0xFF}},
   {"STOP",          "cmd", 2, 0, 2, {0x00, 0x01}, {0x00, 0xFF}},
   {"PAUSE",         "cmd", 2, 0, 2, {0x00, 0x02}, {0x00, 0xFF}},
@@ -108,6 +110,22 @@ bool SLinkTranslator::decode(const uint8_t* data, uint16_t len, SLinkMessage& ou
   const SLinkPattern* pat = matchPattern(out.raw, out.len);
   out.name = pat ? pat->name : kSLinkUnknownName;
   out.note = (pat && pat->note && pat->note[0]) ? pat->note : nullptr;
+
+  if (pat && pat->name && strcmp(pat->name, "STATUS") == 0 && out.len >= 7) {
+    out.hasStatus = true;
+    out.statusRaw = out.raw[2];
+    out.hasDisc = true;
+    out.discRaw = out.raw[5];
+    uint16_t disc = 0;
+    out.discValid = decodeDiscNumber(out.discRaw, out.unit, disc);
+    if (out.discValid) out.disc = disc;
+
+    out.hasTrack = true;
+    out.trackRaw = out.raw[6];
+    uint8_t track = 0;
+    out.trackValid = decodeBcd(out.trackRaw, track);
+    if (out.trackValid) out.track = track;
+  }
 
   if (out.len >= 3 && isDiscCommand(out.cmd)) {
     out.hasDisc = true;

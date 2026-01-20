@@ -7,7 +7,7 @@ SLinkCommandConsole::SLinkCommandConsole(Stream& io,
     : _io(io), _input(input), _printTx(printTx) {}
 
 void SLinkCommandConsole::printHelp() {
-  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, GET_CURRENT_DISC");
+  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, GET_CURRENT_DISC, GET_STATUS");
 }
 
 bool SLinkCommandConsole::normalizeCommand(const char* in, char* out, uint8_t outSize) const {
@@ -82,6 +82,11 @@ bool SLinkCommandConsole::dispatchSimple(const char* cmd) {
   if (strcmp(cmd, "GET_CURRENT_DISC") == 0) {
     printTx("GET_CURRENT_DISC");
     if (!_input.getCurrentDisc()) _io.println("unsupported: GET_CURRENT_DISC");
+    return true;
+  }
+  if (strcmp(cmd, "GET_STATUS") == 0) {
+    printTx("GET_STATUS");
+    if (!_input.getStatus()) _io.println("unsupported: GET_STATUS");
     return true;
   }
   return false;

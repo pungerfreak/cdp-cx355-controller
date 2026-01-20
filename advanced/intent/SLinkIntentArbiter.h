@@ -11,7 +11,7 @@ public:
   void noteDispatched(SLinkIntentType type, uint32_t now = millis());
 
 private:
-  static constexpr uint8_t kIntentTypeCount = 8;
+  static constexpr uint8_t kIntentTypeCount = 9;
 
   struct Policy {
     uint8_t priority;

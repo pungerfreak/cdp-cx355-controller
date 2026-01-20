@@ -63,6 +63,12 @@ bool SLinkFrameBuilder::build(const SLinkUnitCommand& cmd,
       len = 2;
       return true;
     }
+    case SLinkUnitCommandType::GetStatus: {
+      out[0] = cmd.unitOverride ? cmd.unitOverride : 0x90;
+      out[1] = static_cast<uint8_t>(GET_STATUS);
+      len = 2;
+      return true;
+    }
   }
   return false;
 }

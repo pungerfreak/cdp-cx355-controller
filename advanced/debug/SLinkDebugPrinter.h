@@ -27,6 +27,10 @@ public:
                        const SLinkTrackInfo& track,
                        const SLinkDebugInfo* debug) override;
   void currentDiscBankSwitchNeeded(const SLinkDebugInfo* debug) override;
+  void status(const SLinkDiscInfo& disc,
+              const SLinkTrackInfo& track,
+              SLinkTransportState transport,
+              const SLinkDebugInfo* debug) override;
   void unknown(const SLinkDebugInfo* debug) override;
 
 private:

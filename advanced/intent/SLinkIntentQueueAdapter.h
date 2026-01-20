@@ -14,6 +14,7 @@ public:
   bool changeDisc(uint16_t disc) override;
   bool changeTrack(uint8_t track) override;
   bool getCurrentDisc() override;
+  bool getStatus() override;
 
 private:
   bool enqueue(SLinkCommandIntent intent);

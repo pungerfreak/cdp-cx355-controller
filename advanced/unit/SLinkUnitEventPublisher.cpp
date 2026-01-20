@@ -58,7 +58,7 @@ void SLinkUnitEventPublisher::powerOff(const SLinkDebugInfo* debug) {
   publish(SLinkUnitEventType::TransportStateChanged,
           emptyDisc(),
           emptyTrack(),
-          SLinkTransportState::Stopped,
+          SLinkTransportState::PowerOff,
           debug);
 }
 
@@ -149,6 +149,17 @@ void SLinkUnitEventPublisher::currentDiscBankSwitchNeeded(const SLinkDebugInfo* 
           emptyDisc(),
           emptyTrack(),
           SLinkTransportState::Unchanged,
+          debug);
+}
+
+void SLinkUnitEventPublisher::status(const SLinkDiscInfo& disc,
+                                     const SLinkTrackInfo& track,
+                                     SLinkTransportState transport,
+                                     const SLinkDebugInfo* debug) {
+  publish(SLinkUnitEventType::Status,
+          disc,
+          track,
+          transport,
           debug);
 }
 

@@ -217,6 +217,34 @@ void SLinkDebugPrinter::currentDiscBankSwitchNeeded(const SLinkDebugInfo* debug)
   printLine("CURRENT_DISC_BANK_B", nullptr, nullptr, debug);
 }
 
+void SLinkDebugPrinter::status(const SLinkDiscInfo& disc,
+                               const SLinkTrackInfo& track,
+                               SLinkTransportState transport,
+                               const SLinkDebugInfo* debug) {
+  printLine("STATUS", &disc, &track, debug);
+  _out.print("STATUS transport=");
+  switch (transport) {
+    case SLinkTransportState::Playing:
+      _out.print("PLAYING");
+      break;
+    case SLinkTransportState::Paused:
+      _out.print("PAUSED");
+      break;
+    case SLinkTransportState::Stopped:
+      _out.print("STOPPED");
+      break;
+    case SLinkTransportState::PowerOff:
+      _out.print("POWER_OFF");
+      break;
+    case SLinkTransportState::Unknown:
+    case SLinkTransportState::Unchanged:
+    default:
+      _out.print("UNKNOWN");
+      break;
+  }
+  _out.println();
+}
+
 void SLinkDebugPrinter::unknown(const SLinkDebugInfo* debug) {
   printLine("UNKNOWN", nullptr, nullptr, debug);
 }

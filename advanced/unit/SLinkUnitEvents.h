@@ -7,7 +7,8 @@ enum class SLinkTransportState : uint8_t {
   Unchanged,
   Stopped,
   Playing,
-  Paused
+  Paused,
+  PowerOff
 };
 
 enum class SLinkUnitEventType : uint8_t {
@@ -16,6 +17,7 @@ enum class SLinkUnitEventType : uint8_t {
   TrackChanged,
   CurrentDiscInfo,
   CurrentDiscBankSwitchNeeded,
+  Status,
   Unknown
 };
 

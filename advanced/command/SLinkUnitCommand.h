@@ -9,7 +9,8 @@ enum class SLinkUnitCommandType : uint8_t {
   PowerOff,
   ChangeDisc,
   ChangeTrack,
-  GetCurrentDisc
+  GetCurrentDisc,
+  GetStatus
 };
 
 struct SLinkUnitCommand {

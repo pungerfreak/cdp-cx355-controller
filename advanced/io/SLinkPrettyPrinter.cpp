@@ -151,6 +151,37 @@ void SLinkPrettyPrinter::currentDiscBankSwitchNeeded(const SLinkDebugInfo* debug
   _out.println("CURRENT_DISC_BANK_B");
 }
 
+void SLinkPrettyPrinter::status(const SLinkDiscInfo& disc,
+                                const SLinkTrackInfo& track,
+                                SLinkTransportState transport,
+                                const SLinkDebugInfo* debug) {
+  (void)debug;
+  _out.print("STATUS");
+  _out.print(" state=");
+  switch (transport) {
+    case SLinkTransportState::Playing:
+      _out.print("PLAYING");
+      break;
+    case SLinkTransportState::Paused:
+      _out.print("PAUSED");
+      break;
+    case SLinkTransportState::Stopped:
+      _out.print("STOPPED");
+      break;
+    case SLinkTransportState::PowerOff:
+      _out.print("POWER_OFF");
+      break;
+    case SLinkTransportState::Unknown:
+    case SLinkTransportState::Unchanged:
+    default:
+      _out.print("UNKNOWN");
+      break;
+  }
+  printDisc(disc);
+  printTrack(track);
+  _out.println();
+}
+
 void SLinkPrettyPrinter::unknown(const SLinkDebugInfo* debug) {
   (void)debug;
 }

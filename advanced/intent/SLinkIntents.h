@@ -9,7 +9,8 @@ enum class SLinkIntentType : uint8_t {
   PowerOff,
   ChangeDisc,
   ChangeTrack,
-  GetCurrentDisc
+  GetCurrentDisc,
+  GetStatus
 };
 
 struct SLinkCommandIntent {

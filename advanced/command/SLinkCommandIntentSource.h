@@ -13,4 +13,5 @@ public:
   virtual bool changeDisc(uint16_t disc) = 0;
   virtual bool changeTrack(uint8_t track) = 0;
   virtual bool getCurrentDisc() = 0;
+  virtual bool getStatus() = 0;
 };

@@ -58,6 +58,11 @@ bool SLinkUnitCommandSender::getCurrentDisc() {
   return true;
 }
 
+bool SLinkUnitCommandSender::getStatus() {
+  SLinkUnitCommand cmd{SLinkUnitCommandType::GetStatus, 0, 0, 0x00};
+  return send(cmd);
+}
+
 bool SLinkUnitCommandSender::send(const SLinkUnitCommand& cmd) {
   SLinkUnitCommand resolved = cmd;
   if (!resolveChange(resolved)) return false;

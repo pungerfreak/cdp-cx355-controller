@@ -41,6 +41,7 @@ void UiAdapter::onUnitEvent(const SLinkUnitEvent& e)
         case SLinkUnitEventType::DiscChanged:
         case SLinkUnitEventType::TrackChanged:
         case SLinkUnitEventType::CurrentDiscInfo:
+        case SLinkUnitEventType::Status:
         case SLinkUnitEventType::TransportStateChanged:
             refreshFromSnapshot_();
             break;
@@ -76,6 +77,9 @@ void UiAdapter::refreshFromSnapshot_()
             next.transport = UiTransportState::Paused;
             break;
         case SLinkTransportState::Stopped:
+            next.transport = UiTransportState::Stopped;
+            break;
+        case SLinkTransportState::PowerOff:
             next.transport = UiTransportState::Stopped;
             break;
         case SLinkTransportState::Unchanged:

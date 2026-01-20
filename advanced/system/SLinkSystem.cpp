@@ -109,6 +109,7 @@ SLinkCommandIntentSource& SLinkSystem::intentSource() {
 }
 
 void SLinkSystem::requestInitialState() {
+  _intentAdapter.getStatus();
   _intentAdapter.getCurrentDisc();
 }
 
