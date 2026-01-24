@@ -45,7 +45,7 @@ void UiApp::init()
     const lv_coord_t time_w = 170;
     const lv_coord_t meta_w = 160;
     const lv_coord_t state_w = 200;
-    const lv_coord_t controls_w = 200;
+    const lv_coord_t controls_w = 140;
 
     labelHeader_ = lv_label_create(nowPlayingRoot_);
     lv_obj_set_size(labelHeader_, header_w, 20);
@@ -94,8 +94,9 @@ void UiApp::init()
     bindings_[19] = {UiAction::KeypadGo, this};
     bindings_[20] = {UiAction::KeypadCancel, this};
 
-    auto wire_press_release = [&](lv_obj_t* obj, ActionBinding* binding) {
+    auto wire_button_events = [&](lv_obj_t* obj, ActionBinding* binding) {
         lv_obj_add_event_cb(obj, UiApp::onButtonEvent_, LV_EVENT_PRESSED, binding);
+        lv_obj_add_event_cb(obj, UiApp::onButtonEvent_, LV_EVENT_LONG_PRESSED, binding);
         lv_obj_add_event_cb(obj, UiApp::onButtonEvent_, LV_EVENT_RELEASED, binding);
     };
 
@@ -108,31 +109,30 @@ void UiApp::init()
     lv_obj_set_style_pad_all(controls, 0, 0);
     lv_obj_clear_flag(controls, LV_OBJ_FLAG_SCROLLABLE);
 
-    const lv_coord_t btn_w = 40;
+    const lv_coord_t btn_w = 44;
     const lv_coord_t btn_h = 40;
-    const lv_coord_t btn_gap = 0;
+    const lv_coord_t btn_gap = 4;
     const lv_coord_t btn_y = 0;
 
-    auto add_button = [&](const char* text, ActionBinding* binding, int index) {
+    auto add_button = [&](const char* text, ActionBinding* binding, int index) -> lv_obj_t* {
         lv_obj_t* btn = lv_btn_create(controls);
         lv_obj_set_size(btn, btn_w, btn_h);
         lv_obj_set_pos(btn, index * (btn_w + btn_gap), btn_y);
-        wire_press_release(btn, binding);
+        wire_button_events(btn, binding);
         lv_obj_t* label = lv_label_create(btn);
         lv_label_set_text(label, text);
         lv_obj_center(label);
+        return label;
     };
 
     add_button("Prev", &bindings_[0], 0);
-    add_button("Play", &bindings_[1], 1);
-    add_button("Pause", &bindings_[2], 2);
-    add_button("Stop", &bindings_[3], 3);
-    add_button("Next", &bindings_[4], 4);
+    transportLabel_ = add_button("Play", &bindings_[1], 1);
+    add_button("Next", &bindings_[4], 2);
 
     lv_obj_t* powerBtn = lv_btn_create(nowPlayingRoot_);
     lv_obj_set_size(powerBtn, 42, 32);
     lv_obj_set_pos(powerBtn, 188, 80);
-    wire_press_release(powerBtn, &bindings_[5]);
+    wire_button_events(powerBtn, &bindings_[5]);
     lv_obj_t* powerLabel = lv_label_create(powerBtn);
     lv_label_set_text(powerLabel, "Power");
     lv_obj_center(powerLabel);
@@ -140,7 +140,7 @@ void UiApp::init()
     lv_obj_t* discBtn = lv_btn_create(nowPlayingRoot_);
     lv_obj_set_size(discBtn, 56, 32);
     lv_obj_set_pos(discBtn, (screen_w - 56) / 2, 188);
-    wire_press_release(discBtn, &bindings_[6]);
+    wire_button_events(discBtn, &bindings_[6]);
     lv_obj_t* discLabel = lv_label_create(discBtn);
     lv_label_set_text(discLabel, "Disc");
     lv_obj_center(discLabel);
@@ -182,7 +182,7 @@ void UiApp::init()
         lv_obj_set_pos(btn,
                        key_grid_x + col * (key_w + key_gap),
                        key_grid_y + row * (key_h + key_gap));
-        wire_press_release(btn, binding);
+        wire_button_events(btn, binding);
         lv_obj_t* label = lv_label_create(btn);
         lv_label_set_text(label, text);
         lv_obj_center(label);
@@ -264,6 +264,10 @@ void UiApp::render(const UiNowPlayingSnapshot& s)
                 break;
         }
         lv_label_set_text(labelState_, stateText);
+        if (transportLabel_ != nullptr) {
+            const char* transportText = (s.transport == UiTransportState::Playing) ? "Pause" : "Play";
+            lv_label_set_text(transportLabel_, transportText);
+        }
     }
 
     last_ = s;
@@ -296,12 +300,16 @@ void UiApp::showNowPlaying()
 void UiApp::onButtonEvent_(lv_event_t* e)
 {
     lv_event_code_t code = lv_event_get_code(e);
-    if (code != LV_EVENT_PRESSED && code != LV_EVENT_RELEASED) {
+    if (code != LV_EVENT_PRESSED && code != LV_EVENT_RELEASED && code != LV_EVENT_LONG_PRESSED) {
         return;
     }
 
     ActionBinding* binding = static_cast<ActionBinding*>(lv_event_get_user_data(e));
     if (binding == nullptr || binding->app == nullptr) {
+        return;
+    }
+    if (binding->action == UiAction::Play) {
+        binding->app->handleTransportButtonEvent_(code);
         return;
     }
     if (code == LV_EVENT_RELEASED) {
@@ -461,5 +469,44 @@ void UiApp::handleKeypadInput_(UiAction action)
     if (updated) {
         setKeypadError(false);
         updateKeypadDisplay_();
+    }
+}
+
+UiAction UiApp::transportPressAction_() const
+{
+    if (!hasLast_) {
+        return UiAction::Play;
+    }
+
+    switch (last_.transport) {
+        case UiTransportState::Playing:
+            return UiAction::Pause;
+        case UiTransportState::Paused:
+        case UiTransportState::Stopped:
+        case UiTransportState::Unknown:
+        default:
+            return UiAction::Play;
+    }
+}
+
+void UiApp::handleTransportButtonEvent_(lv_event_code_t code)
+{
+    if (code == LV_EVENT_PRESSED) {
+        transportLongPressHandled_ = false;
+        return;
+    }
+
+    if (code == LV_EVENT_LONG_PRESSED) {
+        emitAction_(UiAction::Stop);
+        transportLongPressHandled_ = true;
+        return;
+    }
+
+    if (code == LV_EVENT_RELEASED) {
+        if (transportLongPressHandled_) {
+            transportLongPressHandled_ = false;
+            return;
+        }
+        emitAction_(transportPressAction_());
     }
 }

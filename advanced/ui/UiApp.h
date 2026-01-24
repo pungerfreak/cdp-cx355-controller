@@ -74,12 +74,14 @@ class UiApp {
     lv_obj_t* labelTime_   = nullptr;   // e.g., "01:23"
     lv_obj_t* labelMeta_   = nullptr;   // e.g., "Artist - Album\nTitle"
     lv_obj_t* labelState_  = nullptr;   // e.g., "PLAYING"/"PAUSED"
+    lv_obj_t* transportLabel_ = nullptr;
     lv_obj_t* keypadEntry_ = nullptr;
     lv_obj_t* keypadError_ = nullptr;
 
     // Keep minimal UI-local state if needed (optional)
     UiNowPlayingSnapshot last_{};
     bool hasLast_ = false;
+    bool transportLongPressHandled_ = false;
 
     UiActionCb cb_ = nullptr;
     void* user_ = nullptr;
@@ -96,4 +98,6 @@ class UiApp {
     void showKeypad_();
     void updateKeypadDisplay_();
     void handleKeypadInput_(UiAction action);
+    void handleTransportButtonEvent_(lv_event_code_t code);
+    UiAction transportPressAction_() const;
 };
