@@ -65,8 +65,9 @@ private:
   SLinkCommandSenderStateSync _senderStateSync;
   bool _debugToSerial = true;
   SLinkFrameCallbacks _frameCallbacks;
+  bool _pendingStatusRequest = false;
+  uint32_t _statusRequestAtMs = 0;
 
-  void requestInitialState();
   void emitInitialState();
 };
 #endif  // SLINK_SYSTEM_H_

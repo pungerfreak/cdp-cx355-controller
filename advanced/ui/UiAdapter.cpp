@@ -35,6 +35,11 @@ void UiAdapter::stop()
     system_.removeUnitObserver(*this);
 }
 
+void UiAdapter::requestStatus()
+{
+    system_.intentSource().getStatus();
+}
+
 void UiAdapter::onUnitEvent(const SLinkUnitEvent& e)
 {
     switch (e.type) {

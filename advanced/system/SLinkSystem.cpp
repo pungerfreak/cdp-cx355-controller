@@ -59,10 +59,15 @@ void SLinkSystem::begin() {
   _slinkRx.setRxCallback(SLinkFrameCallbacks::onRxFrame, &_frameCallbacks);
   _slinkRx.begin();
   _slinkTx.begin();
-  requestInitialState();
+  _pendingStatusRequest = true;
+  _statusRequestAtMs = millis() + 50;
 }
 
 void SLinkSystem::poll() {
+  if (_pendingStatusRequest && (int32_t)(millis() - _statusRequestAtMs) >= 0) {
+    _intentAdapter.getStatus();
+    _pendingStatusRequest = false;
+  }
   for (uint8_t i = 0; i < _commandInputCount; ++i) {
     if (_commandInputs[i] != nullptr) {
       _commandInputs[i]->poll();
@@ -110,11 +115,6 @@ SLinkCommandIntentSource& SLinkSystem::intentSource() {
 
 SLinkTx& SLinkSystem::tx() {
   return _slinkTx;
-}
-
-void SLinkSystem::requestInitialState() {
-  _intentAdapter.getStatus();
-  _intentAdapter.getCurrentDisc();
 }
 
 void SLinkSystem::emitInitialState() {

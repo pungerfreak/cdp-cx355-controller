@@ -12,6 +12,7 @@ public:
 
     // Optional but recommended if removeUnitObserver exists
     void stop();
+    void requestStatus();
 
     // SLinkUnitEventObserver
     void onUnitEvent(const SLinkUnitEvent& e) override;
