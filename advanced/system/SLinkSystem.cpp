@@ -1,26 +1,5 @@
 #include "system/SLinkSystem.h"
 
-class SLinkSystem::StatusInitObserver : public SLinkUnitEventObserver {
-public:
-  explicit StatusInitObserver(SLinkSystem& system) : system_(system) {}
-
-  void onUnitEvent(const SLinkUnitEvent& event) override {
-    if (event.type != SLinkUnitEventType::Status) return;
-    uint16_t disc = (event.disc.present && event.disc.valid) ? event.disc.disc : 0;
-    uint8_t track = (event.track.present && event.track.valid) ? event.track.track : 0;
-    if (event.transport == SLinkTransportState::PowerOff) {
-      system_.intentSource().powerOn();
-      if (disc > 0) {
-        track = 1;
-      }
-    }
-    system_.applyInitialState(disc, track);
-  }
-
-private:
-  SLinkSystem& system_;
-};
-
 SLinkSystem::SLinkSystem(HardwareSerial& serial, bool debugToSerial)
     : _serial(serial),
       _hardwareSerial(&serial),
@@ -70,22 +49,12 @@ SLinkSystem::SLinkSystem(Stream& serial, bool debugToSerial)
                        _debugPrinter,
                        _debugToSerial) {}
 
-SLinkSystem::~SLinkSystem() {
-  delete _statusInitObserver;
-}
-
 void SLinkSystem::begin() {
   if (_hardwareSerial != nullptr) {
     _hardwareSerial->begin(230400);
   }
-  if (_statusInitObserver == nullptr) {
-    _statusInitObserver = new StatusInitObserver(*this);
-  }
   _unitEventBus.addObserver(_unitStateStore);
   _unitEventBus.addObserver(_senderStateSync);
-   if (_statusInitObserver != nullptr) {
-     _unitEventBus.addObserver(*_statusInitObserver);
-   }
   _commandSender.setTxCallback(SLinkFrameCallbacks::onTxFrame, &_frameCallbacks);
   _slinkRx.setRxCallback(SLinkFrameCallbacks::onRxFrame, &_frameCallbacks);
   _slinkRx.begin();
