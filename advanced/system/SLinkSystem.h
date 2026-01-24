@@ -25,6 +25,8 @@ class SLinkSystem {
 public:
   explicit SLinkSystem(HardwareSerial& serial, bool debugToSerial);
   explicit SLinkSystem(Stream& serial, bool debugToSerial);
+  ~SLinkSystem();
+  class StatusInitObserver;
 
   void begin();
   void poll();
@@ -62,6 +64,7 @@ private:
   SLinkUnitEventBus _unitEventBus;
   SLinkUnitEventPublisher _unitEventPublisher;
   SLinkCommandSenderStateSync _senderStateSync;
+  StatusInitObserver* _statusInitObserver = nullptr;
   bool _debugToSerial = true;
   SLinkFrameCallbacks _frameCallbacks;
 
