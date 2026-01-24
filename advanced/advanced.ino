@@ -12,6 +12,8 @@
 #include "system/SLinkSystem.h"
 #include "ui/UiApp.h"
 #include "ui/UiAdapter.h"
+#include "cddb/CddbConfig.h"
+#include "cddb/CddbLookup.h"
 
 constexpr bool kDebugToSerial = true;
 
@@ -20,6 +22,7 @@ static SLinkCommandConsole slinkConsole(Serial, slinkSystem.intentSource(), true
 static SLinkPrettyPrinter slinkPrinter(Serial);
 static UiApp app;
 static UiAdapter adapter(slinkSystem, app);
+static CddbLookup cddbLookup(slinkSystem);
 
 void setup() {
   Serial.begin(230400);
@@ -51,6 +54,7 @@ void setup() {
   slinkSystem.addEventOutput(slinkPrinter);
   slinkSystem.begin();
   adapter.start();
+  cddbLookup.start();
 }
 
 void loop() {

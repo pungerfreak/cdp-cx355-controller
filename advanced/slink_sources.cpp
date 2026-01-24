@@ -27,3 +27,4 @@
 #include "unit/SLinkUnitStateStore.cpp"
 #include "ui/UiApp.cpp"
 #include "ui/UiAdapter.cpp"
+#include "cddb/CddbLookup.cpp"
