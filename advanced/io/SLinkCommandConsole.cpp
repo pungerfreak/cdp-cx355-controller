@@ -1,13 +1,26 @@
 #include "io/SLinkCommandConsole.h"
 #include <string.h>
+#include "transport/SLinkTx.h"
 
 SLinkCommandConsole::SLinkCommandConsole(Stream& io,
                                          SLinkCommandIntentSource& input,
-                                         bool printTx)
-    : _io(io), _input(input), _printTx(printTx) {}
+                                         bool printTx,
+                                         SLinkTx* rawTx)
+    : _io(io), _input(input), _rawTx(rawTx), _printTx(printTx) {}
 
 void SLinkCommandConsole::printHelp() {
-  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, GET_CURRENT_DISC, GET_STATUS");
+  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, SEND <HEX>, GET_CURRENT_DISC, GET_STATUS");
+}
+
+bool SLinkCommandConsole::isWhitespace(char c) {
+  return c <= ' ';
+}
+
+char SLinkCommandConsole::normalizeChar(char c) {
+  if (c >= 'a' && c <= 'z') {
+    return (char)(c - 'a' + 'A');
+  }
+  return c;
 }
 
 bool SLinkCommandConsole::normalizeCommand(const char* in, char* out, uint8_t outSize) const {
@@ -15,15 +28,14 @@ bool SLinkCommandConsole::normalizeCommand(const char* in, char* out, uint8_t ou
   uint8_t n = 0;
   bool lastSpace = false;
   for (uint8_t i = 0; in[i] != '\0'; i++) {
-    char c = in[i];
-    if (c <= ' ') {
+    char c = normalizeChar(in[i]);
+    if (isWhitespace(c)) {
       if (!lastSpace && n < (outSize - 1)) {
         out[n++] = ' ';
         lastSpace = true;
       }
       continue;
     }
-    if (c >= 'a' && c <= 'z') c = (char)(c - 'a' + 'A');
     if (n < (outSize - 1)) {
       out[n++] = c;
       lastSpace = false;
@@ -50,6 +62,39 @@ bool SLinkCommandConsole::parseNumber(const char* in, uint16_t& value) const {
   }
   value = (uint16_t)v;
   return true;
+}
+
+bool SLinkCommandConsole::parseHexBytes(const char* in,
+                                        uint8_t* out,
+                                        uint8_t maxLen,
+                                        uint8_t& outLen) const {
+  if (!in || !out || maxLen == 0) return false;
+  outLen = 0;
+  bool haveNibble = false;
+  uint8_t nibble = 0;
+  for (uint8_t i = 0; in[i] != '\0'; ++i) {
+    char c = normalizeChar(in[i]);
+    if (isWhitespace(c)) continue;
+    uint8_t value = 0;
+    if (c >= '0' && c <= '9') {
+      value = (uint8_t)(c - '0');
+    } else if (c >= 'A' && c <= 'F') {
+      value = (uint8_t)(c - 'A' + 10);
+    } else {
+      return false;
+    }
+    if (!haveNibble) {
+      nibble = value;
+      haveNibble = true;
+    } else {
+      if (outLen >= maxLen) {
+        return false;
+      }
+      out[outLen++] = (uint8_t)((nibble << 4) | value);
+      haveNibble = false;
+    }
+  }
+  return !haveNibble && outLen > 0;
 }
 
 bool SLinkCommandConsole::dispatchSimple(const char* cmd) {
@@ -106,6 +151,20 @@ void SLinkCommandConsole::printTx(const char* label, uint16_t value) {
   _io.println(value);
 }
 
+void SLinkCommandConsole::printTxBytes(const char* label, const uint8_t* data, uint8_t len) {
+  if (!_printTx) return;
+  _io.print("tx: ");
+  _io.print(label);
+  _io.print(' ');
+  for (uint8_t i = 0; i < len; ++i) {
+    if (data[i] < 0x10) {
+      _io.print('0');
+    }
+    _io.print(data[i], HEX);
+  }
+  _io.println();
+}
+
 bool SLinkCommandConsole::dispatchDisc(const char* cmd) {
   uint16_t disc = 0;
   const char* prefix = "CHANGE_DISC ";
@@ -150,6 +209,37 @@ bool SLinkCommandConsole::dispatchTrack(const char* cmd) {
   return true;
 }
 
+bool SLinkCommandConsole::dispatchSend(const char* cmd) {
+  const char* prefix = "SEND ";
+  const size_t len = strlen(prefix);
+  if (!cmd || strncmp(cmd, prefix, len) != 0) {
+    return false;
+  }
+  if (_rawTx == nullptr) {
+    _io.println("unsupported: SEND");
+    return true;
+  }
+
+  const char* hex = cmd + len;
+  if (!hex || !*hex) {
+    _io.println("invalid: SEND");
+    return true;
+  }
+
+  uint8_t bytes[kMaxSendBytes];
+  uint8_t count = 0;
+  if (!parseHexBytes(hex, bytes, kMaxSendBytes, count)) {
+    _io.println("invalid: SEND");
+    return true;
+  }
+
+  printTxBytes("SEND", bytes, count);
+  if (!_rawTx->sendBytes(bytes, count)) {
+    _io.println("failed: SEND");
+  }
+  return true;
+}
+
 void SLinkCommandConsole::handleLine(const char* line) {
   char normalized[kBufferSize];
   if (!normalizeCommand(line, normalized, sizeof(normalized))) return;
@@ -162,6 +252,7 @@ void SLinkCommandConsole::handleLine(const char* line) {
   if (dispatchSimple(normalized)) return;
   if (dispatchDisc(normalized)) return;
   if (dispatchTrack(normalized)) return;
+  if (dispatchSend(normalized)) return;
 
   _io.print("unknown: ");
   _io.println(normalized);

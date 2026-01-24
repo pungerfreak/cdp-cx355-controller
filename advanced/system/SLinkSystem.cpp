@@ -139,6 +139,10 @@ SLinkCommandIntentSource& SLinkSystem::intentSource() {
   return _intentAdapter;
 }
 
+SLinkTx& SLinkSystem::tx() {
+  return _slinkTx;
+}
+
 void SLinkSystem::requestInitialState() {
   _intentAdapter.getStatus();
   _intentAdapter.getCurrentDisc();

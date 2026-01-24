@@ -16,7 +16,7 @@
 constexpr bool kDebugToSerial = true;
 
 static SLinkSystem slinkSystem(Serial, kDebugToSerial);
-static SLinkCommandConsole slinkConsole(Serial, slinkSystem.intentSource(), true);
+static SLinkCommandConsole slinkConsole(Serial, slinkSystem.intentSource(), true, &slinkSystem.tx());
 static SLinkPrettyPrinter slinkPrinter(Serial);
 static UiApp app;
 static UiAdapter adapter(slinkSystem, app);
