@@ -49,11 +49,14 @@ void UiAdapter::onUnitEvent(const SLinkUnitEvent& e)
         case SLinkUnitEventType::Status:
         case SLinkUnitEventType::TransportStateChanged:
             refreshFromSnapshot_();
-            if (e.type == SLinkUnitEventType::Status && e.transport == SLinkTransportState::PowerOff) {
-                if (e.disc.present && e.disc.valid) {
-                    system_.applyInitialState(e.disc.disc, 1);
+            if (e.type == SLinkUnitEventType::Status && bootStatusPending_) {
+                if (e.transport == SLinkTransportState::PowerOff) {
+                    if (e.disc.present && e.disc.valid) {
+                        system_.applyInitialState(e.disc.disc, 0);
+                    }
+                    system_.intentSource().powerOn();
                 }
-                system_.intentSource().powerOn();
+                bootStatusPending_ = false;
             }
             break;
         case SLinkUnitEventType::CurrentDiscBankSwitchNeeded:

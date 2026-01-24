@@ -35,9 +35,11 @@ void SLinkUnitStateStore::onUnitEvent(const SLinkUnitEvent& event) {
     case SLinkUnitEventType::Status:
       updateDisc(event.disc);
       if (event.transport == SLinkTransportState::PowerOff) {
-        if (event.disc.present && event.disc.valid) {
-          _currentTrack = 1;
-          _hasTrack = true;
+        if (event.track.present && event.track.valid) {
+          updateTrack(event.track);
+        } else {
+          _currentTrack = 0;
+          _hasTrack = false;
         }
         _transport = SLinkTransportState::Stopped;
         break;

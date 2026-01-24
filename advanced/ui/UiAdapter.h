@@ -47,6 +47,7 @@ private:
 
     bool powerToggleKnown_ = false;
     bool powerIsOn_ = false;
+    bool bootStatusPending_ = true;
     uint16_t discEntryValue_ = 0;
     uint8_t discEntryLen_ = 0;
 };
