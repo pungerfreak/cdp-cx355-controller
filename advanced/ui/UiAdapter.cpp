@@ -1,6 +1,8 @@
 #include "UiAdapter.h"
 
 #include "UiApp.h"
+#include "cddb/CddbIndexer.h"
+#include "ui/LoadingScreen.h"
 
 #include <string.h>
 
@@ -35,6 +37,11 @@ void UiAdapter::stop()
     system_.removeUnitObserver(*this);
 }
 
+void UiAdapter::setIndexer(CddbIndexer* indexer, LoadingScreen* loading)
+{
+    indexer_ = indexer;
+    loading_ = loading;
+}
 void UiAdapter::requestStatus()
 {
     system_.intentSource().getStatus();
@@ -188,44 +195,28 @@ void UiAdapter::onUiAction_(UiAction action)
     SLinkCommandIntentSource& intents = system_.intentSource();
     switch (action) {
         case UiAction::Play: {
-            bool ok = intents.play();
-            Serial.println(ok ? "intent: play" : "intent: play (rejected)");
+            intents.play();
             break;
         }
         case UiAction::Pause: {
-            bool ok = intents.pause();
-            Serial.println(ok ? "intent: pause" : "intent: pause (rejected)");
+            intents.pause();
             break;
         }
         case UiAction::Stop: {
-            bool ok = intents.stop();
-            Serial.println(ok ? "intent: stop" : "intent: stop (rejected)");
+            intents.stop();
             break;
         }
         case UiAction::NextTrack:
         case UiAction::PrevTrack: {
             if (!hasUi_ || ui_.track == 0) {
-                Serial.println(action == UiAction::NextTrack
-                                   ? "intent: nextTrack ignored (track unknown)"
-                                   : "intent: prevTrack ignored (track unknown)");
                 break;
             }
             int delta = (action == UiAction::NextTrack) ? 1 : -1;
             int next = static_cast<int>(ui_.track) + delta;
             if (next < 1 || next > 255) {
-                Serial.println(action == UiAction::NextTrack
-                                   ? "intent: nextTrack ignored (out of range)"
-                                   : "intent: prevTrack ignored (out of range)");
                 break;
             }
-            bool ok = intents.changeTrack(static_cast<uint8_t>(next));
-            if (action == UiAction::NextTrack) {
-                Serial.println(ok ? "intent: nextTrack -> changeTrack"
-                                  : "intent: nextTrack rejected");
-            } else {
-                Serial.println(ok ? "intent: prevTrack -> changeTrack"
-                                  : "intent: prevTrack rejected");
-            }
+            intents.changeTrack(static_cast<uint8_t>(next));
             break;
         }
         case UiAction::Power: {
@@ -233,19 +224,16 @@ void UiAdapter::onUiAction_(UiAction action)
                 powerIsOn_ = hasUi_
                              && (ui_.transport != UiTransportState::Unknown
                                  || ui_.disc != 0
-                                 || ui_.track != 0);
+                                || ui_.track != 0);
                 powerToggleKnown_ = true;
             }
             bool sendOff = powerIsOn_;
-            bool ok = sendOff ? intents.powerOff() : intents.powerOn();
             if (sendOff) {
-                Serial.println(ok ? "intent: powerOff" : "intent: powerOff (rejected)");
+                intents.powerOff();
             } else {
-                Serial.println(ok ? "intent: powerOn" : "intent: powerOn (rejected)");
+                intents.powerOn();
             }
-            if (ok) {
-                powerIsOn_ = !powerIsOn_;
-            }
+            powerIsOn_ = !sendOff;
             break;
         }
         case UiAction::OpenDiscKeypad:
@@ -316,11 +304,9 @@ void UiAdapter::onUiAction_(UiAction action)
         case UiAction::KeypadGo: {
             if (discEntryLen_ == 0 || discEntryValue_ < 1 || discEntryValue_ > 300) {
                 app_.setKeypadError(true);
-                Serial.println("intent: changeDisc ignored (invalid entry)");
                 break;
             }
-            bool ok = intents.changeDisc(discEntryValue_);
-            Serial.println(ok ? "intent: changeDisc" : "intent: changeDisc (rejected)");
+            intents.changeDisc(discEntryValue_);
             discEntryValue_ = 0;
             discEntryLen_ = 0;
             app_.setKeypadError(false);
@@ -330,6 +316,14 @@ void UiAdapter::onUiAction_(UiAction action)
         case UiAction::KeypadCancel:
             discEntryValue_ = 0;
             discEntryLen_ = 0;
+            break;
+        case UiAction::StartCddbIndex:
+            if (indexer_ != nullptr) {
+                indexer_->start();
+                if (loading_ != nullptr) {
+                    loading_->show();
+                }
+            }
             break;
         default:
             break;

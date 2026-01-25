@@ -93,6 +93,7 @@ void UiApp::init()
     bindings_[18] = {UiAction::KeypadClear, this};
     bindings_[19] = {UiAction::KeypadGo, this};
     bindings_[20] = {UiAction::KeypadCancel, this};
+    bindings_[21] = {UiAction::StartCddbIndex, this};
 
     auto wire_button_events = [&](lv_obj_t* obj, ActionBinding* binding) {
         lv_obj_add_event_cb(obj, UiApp::onButtonEvent_, LV_EVENT_PRESSED, binding);
@@ -144,6 +145,14 @@ void UiApp::init()
     lv_obj_t* discLabel = lv_label_create(discBtn);
     lv_label_set_text(discLabel, "Disc");
     lv_obj_center(discLabel);
+
+    lv_obj_t* indexBtn = lv_btn_create(nowPlayingRoot_);
+    lv_obj_set_size(indexBtn, 60, 32);
+    lv_obj_set_pos(indexBtn, 20, 80);
+    wire_button_events(indexBtn, &bindings_[21]);
+    lv_obj_t* indexLabel = lv_label_create(indexBtn);
+    lv_label_set_text(indexLabel, "Index");
+    lv_obj_center(indexLabel);
 
     const lv_coord_t inset = 20;
     const lv_coord_t label_w = screen_w - (inset * 2);

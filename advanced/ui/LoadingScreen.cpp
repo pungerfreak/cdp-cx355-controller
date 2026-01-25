@@ -38,6 +38,21 @@ void LoadingScreen::init(lv_obj_t* parent) {
   lv_obj_set_style_bg_color(bar_, lv_color_black(), LV_PART_INDICATOR);
   lv_obj_set_style_bg_opa(bar_, LV_OPA_COVER, LV_PART_INDICATOR);
   lv_bar_set_value(bar_, 0, LV_ANIM_OFF);
+
+  btnCancel_ = lv_btn_create(root_);
+  lv_obj_set_size(btnCancel_, 120, 34);
+  lv_obj_align(btnCancel_, LV_ALIGN_CENTER, 0, 60);
+  lv_obj_set_style_bg_color(btnCancel_, lv_color_make(0xF2, 0xF2, 0xF2), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(btnCancel_, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_color(btnCancel_, lv_color_make(0x99, 0x99, 0x99), LV_PART_MAIN);
+  lv_obj_set_style_border_opa(btnCancel_, LV_OPA_COVER, LV_PART_MAIN);
+  lv_obj_set_style_border_width(btnCancel_, 1, LV_PART_MAIN);
+  lv_obj_set_style_radius(btnCancel_, 10, LV_PART_MAIN);
+  lv_obj_t* labelCancel = lv_label_create(btnCancel_);
+  lv_label_set_text(labelCancel, "Cancel");
+  lv_obj_set_style_text_color(labelCancel, lv_color_black(), LV_PART_MAIN);
+  lv_obj_center(labelCancel);
+  lv_obj_move_foreground(btnCancel_);
 }
 
 void LoadingScreen::show() {
@@ -60,23 +75,34 @@ void LoadingScreen::setStatus(const char* stage,
                               uint32_t unitsTotal) {
   if (!root_) return;
   if (!stage) stage = "";
+  // Keep the bar from shrinking when totals change by never letting percent drop.
+  if (percent == 0 && unitsDone == 0) {
+    lastPercent_ = 0;
+    lastDisplayPercent_ = 0.0f;
+  } else if (percent < lastPercent_) {
+    percent = lastPercent_;
+  } else {
+    lastPercent_ = percent;
+  }
+  float displayPercent = percent;
+  if (unitsTotal > 0) {
+    displayPercent = (static_cast<float>(unitsDone) * 100.0f) /
+                     static_cast<float>(unitsTotal);
+  }
+  if (displayPercent < lastDisplayPercent_) {
+    displayPercent = lastDisplayPercent_;
+  } else {
+    lastDisplayPercent_ = displayPercent;
+  }
+  if (displayPercent > 100.0f) displayPercent = 100.0f;
   lv_label_set_text(labelStage_, stage);
   char buf[64];
-  if (unitsTotal > 0) {
-    snprintf(buf,
-             sizeof(buf),
-             "Disc %u / %u (%lu/%lu tracks)",
-             static_cast<unsigned>(disc),
-             static_cast<unsigned>(totalDiscs),
-             static_cast<unsigned long>(unitsDone),
-             static_cast<unsigned long>(unitsTotal));
-  } else {
-    snprintf(buf,
-             sizeof(buf),
-             "Disc %u / %u",
-             static_cast<unsigned>(disc),
-             static_cast<unsigned>(totalDiscs));
-  }
+  snprintf(buf,
+           sizeof(buf),
+           "Disc %u / %u (%.2f%%)",
+           static_cast<unsigned>(disc),
+           static_cast<unsigned>(totalDiscs),
+           static_cast<double>(displayPercent));
   lv_label_set_text(labelDisc_, buf);
   lv_bar_set_value(bar_, percent, LV_ANIM_OFF);
 }

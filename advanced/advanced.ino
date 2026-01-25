@@ -30,7 +30,7 @@ static CddbClient cddbClient({kCddbApiSubdomain,
                               kCddbHelloVersion,
                               kCddbWifiSsid,
                               kCddbWifiPass});
-static CddbIndexer cddbIndexer(slinkSystem, cddbLookup, cddbClient, cddbStorage, 2);
+static CddbIndexer cddbIndexer(slinkSystem, cddbLookup, cddbClient, cddbStorage, 300);
 static SLinkCommandConsole slinkConsole(Serial,
                                         slinkSystem.intentSource(),
                                         true,
@@ -40,7 +40,12 @@ static SLinkPrettyPrinter slinkPrinter(Serial);
 static UiApp app;
 static UiAdapter adapter(slinkSystem, app);
 static LoadingScreen loadingScreen;
-static bool uiStarted = false;
+static bool cancelRequested = false;
+static bool uiVisible = true;
+
+static void onCancelClicked(lv_event_t* e) {
+  cancelRequested = true;
+}
 
 void setup() {
   Serial.begin(230400);
@@ -68,7 +73,8 @@ void setup() {
   install_touch_gap_filter();
 
   loadingScreen.init(lv_screen_active());
-  loadingScreen.show();
+  loadingScreen.hide();
+  lv_obj_add_event_cb(loadingScreen.cancelButton(), onCancelClicked, LV_EVENT_CLICKED, nullptr);
 
   if (!cddbStorage.begin()) {
     Serial.println("cddb storage unavailable; CDDB data will not be saved");
@@ -78,27 +84,42 @@ void setup() {
   slinkSystem.addEventOutput(slinkPrinter);
   slinkSystem.begin();
   cddbLookup.start();
-  cddbIndexer.start();
-}
-
-void maybeStartUi() {
-  if (uiStarted) return;
-  CddbIndexStatus st = cddbIndexer.status();
-  if (!(st.complete || !st.active)) return;
   app.init();
+  adapter.setIndexer(&cddbIndexer, &loadingScreen);
   adapter.start();
-  uiStarted = true;
-  loadingScreen.hide();
 }
 
 void loop() {
   slinkSystem.poll();
-  cddbIndexer.tick(millis());
-  CddbIndexStatus st = cddbIndexer.status();
-  if (!uiStarted) {
-    loadingScreen.setStatus(st.stage, st.currentDisc, st.totalDiscs, st.percent, st.unitsDone, st.unitsTotal);
+  uint32_t now = millis();
+  if (cancelRequested) {
+    cancelRequested = false;
+    cddbIndexer.abort();
+    cddbLookup.cancel();
+    slinkSystem.clearIntents();
+    slinkSystem.intentSource().stop();
+    loadingScreen.hide();
+    lv_obj_clear_flag(app.root(), LV_OBJ_FLAG_HIDDEN);
+    uiVisible = true;
   }
-  maybeStartUi();
+  cddbIndexer.tick(now);
+  CddbIndexStatus st = cddbIndexer.status();
+  static bool wasActive = false;
+  if (st.active) {
+    if (uiVisible) {
+      lv_obj_add_flag(app.root(), LV_OBJ_FLAG_HIDDEN);
+      uiVisible = false;
+    }
+    loadingScreen.show();
+    loadingScreen.setStatus(st.stage, st.currentDisc, st.totalDiscs, st.percent, st.unitsDone, st.unitsTotal);
+  } else if (wasActive) {
+    loadingScreen.hide();
+    slinkSystem.intentSource().stop();
+    lv_obj_clear_flag(app.root(), LV_OBJ_FLAG_HIDDEN);
+    uiVisible = true;
+  }
+  wasActive = st.active;
+
   lv_timer_handler();  // let the GUI do its work
   delay(1);
 }

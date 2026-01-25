@@ -24,7 +24,8 @@ enum class UiAction : uint8_t {
     KeypadBackspace,
     KeypadClear,
     KeypadGo,
-    KeypadCancel
+    KeypadCancel,
+    StartCddbIndex
 };
 
 using UiActionCb = void(*)(UiAction action, void* user);
@@ -59,6 +60,7 @@ class UiApp {
     void setActionCallback(UiActionCb cb, void* user);
     void setKeypadError(bool on);
     void showNowPlaying();
+    lv_obj_t* root() const { return nowPlayingRoot_; }
 
   private:
     struct ActionBinding {
@@ -85,7 +87,7 @@ class UiApp {
 
     UiActionCb cb_ = nullptr;
     void* user_ = nullptr;
-    static constexpr size_t kActionCount_ = 21;
+    static constexpr size_t kActionCount_ = 22;
     ActionBinding bindings_[kActionCount_]{};
     char keypadBuf_[4]{};
     uint8_t keypadLen_ = 0;

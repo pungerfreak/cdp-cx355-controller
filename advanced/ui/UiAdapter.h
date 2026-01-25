@@ -3,6 +3,9 @@
 #include "UiApp.h"
 #include "../system/SLinkSystem.h"
 
+class CddbIndexer;
+class LoadingScreen;
+
 class UiAdapter final : public SLinkUnitEventObserver {
 public:
     UiAdapter(SLinkSystem& system, UiApp& app);
@@ -13,6 +16,7 @@ public:
     // Optional but recommended if removeUnitObserver exists
     void stop();
     void requestStatus();
+    void setIndexer(class CddbIndexer* indexer, class LoadingScreen* loading);
 
     // SLinkUnitEventObserver
     void onUnitEvent(const SLinkUnitEvent& e) override;
@@ -50,4 +54,6 @@ private:
     bool bootStatusPending_ = true;
     uint16_t discEntryValue_ = 0;
     uint8_t discEntryLen_ = 0;
+    CddbIndexer* indexer_ = nullptr;
+    LoadingScreen* loading_ = nullptr;
 };

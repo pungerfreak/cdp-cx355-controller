@@ -14,12 +14,16 @@ public:
                  uint8_t percent,
                  uint32_t unitsDone = 0,
                  uint32_t unitsTotal = 0);
+  lv_obj_t* cancelButton() const { return btnCancel_; }
 
 private:
   lv_obj_t* root_ = nullptr;
   lv_obj_t* labelStage_ = nullptr;
   lv_obj_t* labelDisc_ = nullptr;
   lv_obj_t* bar_ = nullptr;
+  lv_obj_t* btnCancel_ = nullptr;
+  uint8_t lastPercent_ = 0;
+  float lastDisplayPercent_ = 0.0f;
 };
 
 #endif  // LOADING_SCREEN_H_
