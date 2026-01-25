@@ -1,10 +1,42 @@
 #include "unit/SLinkUnitStateStore.h"
 
+void SLinkUnitStateStore::resetTrackCount() {
+  _trackCount = 0;
+  _trackCountValid = false;
+  _hasTrackCount = false;
+}
+
+void SLinkUnitStateStore::resetDiscLength() {
+  _discMinutes = 0;
+  _discSeconds = 0;
+  _discFrames = 0;
+  _discLengthValid = false;
+  _hasDiscLength = false;
+}
+
 void SLinkUnitStateStore::updateDisc(const SLinkDiscInfo& disc) {
   if (!disc.present || !disc.valid) return;
-  if (_hasDisc && _currentDisc == disc.disc) return;
+  const bool discChanged = (!_hasDisc || _currentDisc != disc.disc);
   _currentDisc = disc.disc;
   _hasDisc = true;
+  if (discChanged) {
+    _currentTrack = 0;
+    _hasTrack = false;
+    resetTrackCount();
+    resetDiscLength();
+  }
+  if (disc.hasTrackCount) {
+    _hasTrackCount = true;
+    _trackCountValid = disc.trackCountValid;
+    _trackCount = disc.trackCount;
+  }
+  if (disc.hasDiscLength) {
+    _hasDiscLength = true;
+    _discLengthValid = disc.discLengthValid;
+    _discMinutes = disc.discMinutes;
+    _discSeconds = disc.discSeconds;
+    _discFrames = disc.discFrames;
+  }
 }
 
 void SLinkUnitStateStore::updateTrack(const SLinkTrackInfo& track) {
@@ -21,6 +53,8 @@ void SLinkUnitStateStore::onUnitEvent(const SLinkUnitEvent& event) {
           || !_hasDisc || event.disc.disc != _currentDisc) {
         _currentTrack = 0;
         _hasTrack = false;
+        resetTrackCount();
+        resetDiscLength();
       }
       updateDisc(event.disc);
       break;
@@ -78,6 +112,18 @@ void SLinkUnitStateStore::stateInfo(SLinkDiscInfo& disc, SLinkTrackInfo& track) 
     disc.present = true;
     disc.valid = true;
     disc.disc = _currentDisc;
+    if (_hasTrackCount) {
+      disc.hasTrackCount = true;
+      disc.trackCountValid = _trackCountValid;
+      disc.trackCount = _trackCount;
+    }
+    if (_hasDiscLength) {
+      disc.hasDiscLength = true;
+      disc.discLengthValid = _discLengthValid;
+      disc.discMinutes = _discMinutes;
+      disc.discSeconds = _discSeconds;
+      disc.discFrames = _discFrames;
+    }
   }
   if (_hasTrack) {
     track.present = true;

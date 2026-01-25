@@ -35,6 +35,20 @@ struct SLinkMessage {
   bool     discValid = false;
   uint16_t disc = 0;
 
+  bool    hasTrackCount = false;
+  uint8_t trackCountRaw = 0;
+  bool    trackCountValid = false;
+  uint8_t trackCount = 0;
+
+  bool    hasDiscLength = false;
+  bool    discLengthValid = false;
+  uint8_t discMinutes = 0;
+  uint8_t discSeconds = 0;
+  uint8_t discFrames = 0;
+  uint8_t discMinutesRaw = 0;
+  uint8_t discSecondsRaw = 0;
+  uint8_t discFramesRaw = 0;
+
   bool    hasTrack = false;
   uint8_t trackRaw = 0;
   bool    trackValid = false;

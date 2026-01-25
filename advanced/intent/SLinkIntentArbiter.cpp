@@ -15,6 +15,7 @@ const SLinkIntentArbiter::Policy& SLinkIntentArbiter::policyFor(
   constexpr uint32_t kExpirePowerMs = 8000;
   constexpr uint32_t kExpireChangeDiscMs = 8000;
   constexpr uint32_t kExpireChangeTrackMs = 5000;
+  constexpr uint32_t kExpireGetDiscInfoMs = 4000;
   constexpr uint32_t kExpireGetCurrentDiscMs = 4000;
   constexpr uint32_t kExpireGetStatusMs = 4000;
 
@@ -26,6 +27,7 @@ const SLinkIntentArbiter::Policy& SLinkIntentArbiter::policyFor(
       {kPriorityHigh, kThrottlePowerMs, kExpirePowerMs},            // PowerOff
       {kPriorityLow, kThrottleSelectMs, kExpireChangeDiscMs},       // ChangeDisc
       {kPriorityLow, kThrottleSelectMs, kExpireChangeTrackMs},      // ChangeTrack
+      {kPriorityHigh, kThrottleStatusMs, kExpireGetDiscInfoMs},     // GetDiscInfo
       {kPriorityHigh, kThrottleStatusMs, kExpireGetCurrentDiscMs},  // GetCurrentDisc
       {kPriorityHigh, kThrottleStatusMs, kExpireGetStatusMs}        // GetStatus
   };

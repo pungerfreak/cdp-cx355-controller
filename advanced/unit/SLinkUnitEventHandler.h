@@ -25,6 +25,14 @@ struct SLinkDiscInfo {
   bool valid = false;
   uint16_t disc = 0;
   uint8_t raw = 0;
+  bool hasTrackCount = false;
+  bool trackCountValid = false;
+  uint8_t trackCount = 0;
+  bool hasDiscLength = false;
+  bool discLengthValid = false;
+  uint8_t discMinutes = 0;
+  uint8_t discSeconds = 0;
+  uint8_t discFrames = 0;
 };
 
 struct SLinkTrackInfo {

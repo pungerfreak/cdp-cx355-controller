@@ -57,6 +57,14 @@ bool SLinkFrameBuilder::build(const SLinkUnitCommand& cmd,
       len = 4;
       return true;
     }
+    case SLinkUnitCommandType::GetDiscInfo: {
+      uint8_t targetUnit = 0;
+      if (!encodeDiscUnit(cmd.disc, targetUnit)) return false;
+      out[0] = targetUnit;
+      out[1] = static_cast<uint8_t>(GET_DISC_INFO);
+      len = 2;
+      return true;
+    }
     case SLinkUnitCommandType::GetCurrentDisc: {
       out[0] = unitByte;
       out[1] = static_cast<uint8_t>(GET_CURRENT_DISC);

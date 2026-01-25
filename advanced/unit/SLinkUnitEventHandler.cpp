@@ -14,6 +14,14 @@ SLinkDiscInfo makeDiscInfo(const SLinkMessage& msg) {
   disc.valid = msg.discValid;
   disc.disc = msg.disc;
   disc.raw = msg.discRaw;
+  disc.hasTrackCount = msg.hasTrackCount;
+  disc.trackCountValid = msg.trackCountValid;
+  disc.trackCount = msg.trackCount;
+  disc.hasDiscLength = msg.hasDiscLength;
+  disc.discLengthValid = msg.discLengthValid;
+  disc.discMinutes = msg.discMinutes;
+  disc.discSeconds = msg.discSeconds;
+  disc.discFrames = msg.discFrames;
   return disc;
 }
 

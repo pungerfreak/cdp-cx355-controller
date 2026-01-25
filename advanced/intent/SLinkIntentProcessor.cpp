@@ -67,6 +67,9 @@ bool SLinkIntentProcessor::dispatch(const SLinkCommandIntent& intent) {
       cmd.type = SLinkUnitCommandType::ChangeTrack;
       cmd.track = intent.track;
       break;
+    case SLinkIntentType::GetDiscInfo:
+      cmd.type = SLinkUnitCommandType::GetDiscInfo;
+      break;
     case SLinkIntentType::GetCurrentDisc:
       cmd.type = SLinkUnitCommandType::GetCurrentDisc;
       break;

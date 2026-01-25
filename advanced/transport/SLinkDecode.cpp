@@ -10,6 +10,7 @@ const SLinkPattern kPatterns[] = {
   {"STOP",          "cmd", 2, 0, 2, {0x00, 0x01}, {0x00, 0xFF}},
   {"PAUSE",         "cmd", 2, 0, 2, {0x00, 0x02}, {0x00, 0xFF}},
   {"CHANGING_DISC", "cmd", 2, 0, 2, {0x00, 0x06}, {0x00, 0xFF}},
+  {"CHANGING_DISC", "catalog", 2, 0, 2, {0x00, 0x14}, {0x00, 0xFF}},
   {"CHANGE_DISC",   "cmd", 4, 4, 4, {0x00, 0x50, 0x00, 0x01}, {0x00, 0xFF, 0x00, 0xFF}},
   {"CHANGE_TRACK",  "cmd", 4, 4, 2, {0x00, 0x50}, {0x00, 0xFF}},
   {"POWER_ON",      "cmd", 2, 0, 2, {0x00, 0x2E}, {0x00, 0xFF}},
@@ -20,6 +21,7 @@ const SLinkPattern kPatterns[] = {
   {"LOADING_DISC",  "cmd", 3, 0, 2, {0x00, 0x54}, {0x00, 0xFF}},
   {"DISC_LOADED",   "cmd", 3, 0, 2, {0x00, 0x58}, {0x00, 0xFF}},
   {"CURRENT_DISC_BANK_B", "cmd", 2, 0, 2, {0x00, 0x15}, {0x00, 0xFF}},
+  {"CURRENT_DISC_INFO", "catalog", 7, 8, 2, {0x00, 0x60}, {0x00, 0xFF}},
   {"CURRENT_DISC_INFO", "cmd", 6, 0, 2, {0x00, 0x62}, {0x00, 0xFF}},
   // Add known codes here as you confirm them from the S-Link spec.
   // {"Example Name", "Optional note", minLen, maxLen, prefixLen,
@@ -30,7 +32,7 @@ const SLinkPattern kPatterns[] = {
 constexpr uint16_t kPatternCount = sizeof(kPatterns) / sizeof(kPatterns[0]);
 
 bool isDiscCommand(uint8_t cmd) {
-  return (cmd == 0x50 || cmd == 0x52 || cmd == 0x54 || cmd == 0x58 || cmd == 0x62);
+  return (cmd == 0x50 || cmd == 0x52 || cmd == 0x54 || cmd == 0x58 || cmd == 0x60 || cmd == 0x62);
 }
 
 bool isDiscTrackCommand(uint8_t cmd) {
@@ -152,6 +154,33 @@ bool SLinkTranslator::decode(const uint8_t* data, uint16_t len, SLinkMessage& ou
       out.trackSecValid = decodeBcd(out.trackSecRaw, seconds);
       if (out.trackMinValid) out.trackMin = minutes;
       if (out.trackSecValid) out.trackSec = seconds;
+    }
+  }
+
+  if (out.cmd == 0x60 && out.len >= 5) {
+    out.hasTrackCount = true;
+    out.trackCountRaw = out.raw[4];
+    uint8_t count = 0;
+    out.trackCountValid = decodeBcd(out.trackCountRaw, count);
+    out.trackCount = out.trackCountValid ? count : out.trackCountRaw;
+    if (!out.trackCountValid && out.trackCountRaw > 0) {
+      out.trackCountValid = true;
+    }
+
+    if (out.len >= 7) {
+      out.hasDiscLength = true;
+      out.discMinutesRaw = out.raw[5];
+      out.discSecondsRaw = out.raw[6];
+      out.discFramesRaw = (out.len >= 8) ? out.raw[7] : 0;
+      uint8_t mm = 0;
+      uint8_t ss = 0;
+      out.discLengthValid =
+          decodeBcd(out.discMinutesRaw, mm) && decodeBcd(out.discSecondsRaw, ss);
+      if (out.discLengthValid) {
+        out.discMinutes = mm;
+        out.discSeconds = ss;
+      }
+      out.discFrames = out.discFramesRaw;
     }
   }
 

@@ -52,6 +52,11 @@ bool SLinkUnitCommandSender::changeTrack(uint8_t track) {
   return send(cmd);
 }
 
+bool SLinkUnitCommandSender::getDiscInfo() {
+  SLinkUnitCommand cmd{SLinkUnitCommandType::GetDiscInfo, 0, 0};
+  return send(cmd);
+}
+
 bool SLinkUnitCommandSender::getCurrentDisc() {
   if (!sendGetCurrentDisc(0x90)) return false;
   setStage(CurrentDiscStage::BankARequested);
@@ -93,6 +98,13 @@ bool SLinkUnitCommandSender::resolveChange(SLinkUnitCommand& cmd) const {
   }
   if (cmd.type == SLinkUnitCommandType::ChangeTrack) {
     if (cmd.track == 0) return false;
+    if (cmd.disc == 0) {
+      if (!_hasDisc) return false;
+      cmd.disc = _currentDisc;
+    }
+    return true;
+  }
+  if (cmd.type == SLinkUnitCommandType::GetDiscInfo) {
     if (cmd.disc == 0) {
       if (!_hasDisc) return false;
       cmd.disc = _currentDisc;
