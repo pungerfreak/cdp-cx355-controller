@@ -62,11 +62,7 @@ bool CddbClient::ensureWifi_() {
   while (WiFi.status() != WL_CONNECTED && (millis() - start) < 10000) {
     delay(50);
   }
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("cddb client: wifi connect failed");
-    return false;
-  }
-  return true;
+  return WiFi.status() == WL_CONNECTED;
 }
 
 void CddbClient::disconnectWifi_() {
@@ -103,24 +99,12 @@ String CddbClient::buildReadUrl_(const String& discId, const char* overrideSubdo
 String CddbClient::httpGet_(const String& url) {
   WiFiClient client;
   HTTPClient http;
-  if (!http.begin(client, url)) {
-    Serial.println("cddb client: http begin failed");
-    return "";
-  }
+  if (!http.begin(client, url)) return "";
   const int code = http.GET();
   String body;
   if (code > 0) {
     body = http.getString();
-  } else {
-    Serial.print("cddb client: http error ");
-    Serial.println(code);
   }
-  Serial.print("cddb client: GET ");
-  Serial.print(url);
-  Serial.print(" code=");
-  Serial.print(code);
-  Serial.print(" len=");
-  Serial.println(body.length());
   http.end();
   return body;
 }
@@ -133,10 +117,6 @@ bool CddbClient::parseQuery_(const String& body, String& discIdOut) {
   statusLine.trim();
   const int status = parseStatus_(statusLine);
   if (status == 0 || status == 202 || status == 403) {
-    Serial.print("cddb client: query status ");
-    Serial.print(status);
-    Serial.print(" line=");
-    Serial.println(statusLine);
     return false;
   }
 
@@ -157,10 +137,6 @@ bool CddbClient::parseQuery_(const String& body, String& discIdOut) {
   if (discIdOut.isEmpty()) {
     parseCandidateLine_(statusLine, discIdOut);
   }
-  if (discIdOut.isEmpty()) {
-    Serial.print("cddb client: no disc id; first line: ");
-    Serial.println(firstLine(body));
-  }
   return !discIdOut.isEmpty();
 }
 
@@ -174,10 +150,6 @@ bool CddbClient::parseRead_(const String& body, CddbMetadata& out) {
   statusLine.trim();
   const int status = parseStatus_(statusLine);
   if (status != 210) {
-    Serial.print("cddb client: read status ");
-    Serial.print(status);
-    Serial.print(" line=");
-    Serial.println(statusLine);
     return false;
   }
 
