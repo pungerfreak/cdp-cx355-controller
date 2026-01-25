@@ -13,6 +13,7 @@ public:
   bool isEmpty() const;
   bool isFull() const;
   uint8_t size() const;
+  void clear();
 
 private:
   SLinkCommandIntent _queue[kMaxIntents];

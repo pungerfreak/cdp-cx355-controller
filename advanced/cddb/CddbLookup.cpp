@@ -16,6 +16,11 @@ void CddbLookup::stop() {
   started_ = false;
 }
 
+void CddbLookup::cancel() {
+  resetState_();
+  result_ = Result{};
+}
+
 bool CddbLookup::lookup(uint16_t disc) {
   if (busy()) return false;
 
@@ -61,7 +66,6 @@ void CddbLookup::tick(uint32_t nowMs) {
     if (highestTrackSeen_ > 0) {
       finalizeSuccess_();
     } else {
-      Serial.println("cddb lookup: timeout with no tracks");
       finalizeFailure_();
     }
   }
@@ -131,7 +135,6 @@ void CddbLookup::onUnitEvent(const SLinkUnitEvent& e) {
       break;
     case SLinkUnitEventType::DiscChanged:
       if (state_ == State::Collecting && targetDisc_ != 0 && e.disc.valid && e.disc.disc != targetDisc_) {
-        Serial.println("cddb lookup: disc changed away from target");
         finalizeFailure_();
       }
       break;
@@ -284,16 +287,6 @@ void CddbLookup::finalizeSuccess_() {
 
 void CddbLookup::finalizeFailure_() {
   if (state_ == State::Complete || state_ == State::Failed) return;
-  Serial.print("cddb lookup: finalize failure (state=");
-  Serial.print(static_cast<int>(state_));
-  Serial.print(" requestedTrack=");
-  Serial.print(requestedTrack_);
-  Serial.print(" highestSeen=");
-  Serial.print(highestTrackSeen_);
-  Serial.print(" readySeen=");
-  Serial.print(readySeen_);
-  Serial.print(" trackStarted=");
-  Serial.println(trackRequestsStarted_);
   state_ = State::Failed;
   result_.ready = true;
   result_.success = false;
@@ -303,8 +296,6 @@ bool CddbLookup::buildResult_() {
   if (targetDisc_ == 0 || highestTrackSeen_ == 0) return false;
   for (uint8_t i = 0; i < highestTrackSeen_; ++i) {
     if (!tracks_[i].present) {
-      Serial.print("cddb lookup: missing track ");
-      Serial.println(i + 1);
       return false;
     }
   }

@@ -28,6 +28,7 @@ public:
               uint16_t maxDiscs = 300);
 
   void start();
+  void abort();
   void tick(uint32_t nowMs);
   CddbIndexStatus status() const;
 
@@ -65,6 +66,7 @@ private:
   uint8_t trackCounts_[301] = {};
   uint32_t unitsTotal_ = 0;
   uint32_t unitsDone_ = 0;
+  bool discReady_ = false;
 };
 
 #endif  // CDDB_INDEXER_H_

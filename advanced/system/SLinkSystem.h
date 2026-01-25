@@ -36,6 +36,7 @@ public:
   void applyInitialState(uint16_t disc, uint8_t track);
   SLinkCommandIntentSource& intentSource();
   SLinkTx& tx();
+  void clearIntents();
 
 private:
   static constexpr uint8_t kMaxCommandInputs = 4;

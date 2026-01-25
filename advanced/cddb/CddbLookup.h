@@ -47,6 +47,7 @@ public:
   bool hasResult() const;
   const Result& result() const;
   void tick(uint32_t nowMs);
+  void cancel();
   uint8_t requestedTrack() const { return requestedTrack_; }
   uint8_t tracksSeen() const { return highestTrackSeen_; }
   uint8_t trackCountHint() const { return trackCountHint_; }

@@ -5,6 +5,7 @@ class SLinkCommandIntentSource {
 public:
   virtual ~SLinkCommandIntentSource() = default;
 
+  // Commands that act on the "current" disc/player state should be parameterless.
   virtual bool play() = 0;
   virtual bool stop() = 0;
   virtual bool pause() = 0;

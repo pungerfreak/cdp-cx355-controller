@@ -117,6 +117,10 @@ SLinkTx& SLinkSystem::tx() {
   return _slinkTx;
 }
 
+void SLinkSystem::clearIntents() {
+  _intentQueue.clear();
+}
+
 void SLinkSystem::emitInitialState() {
   SLinkDiscInfo discInfo;
   SLinkTrackInfo trackInfo;

@@ -55,3 +55,13 @@ bool SLinkIntentQueue::isFull() const {
 uint8_t SLinkIntentQueue::size() const {
   return _count;
 }
+
+void SLinkIntentQueue::clear() {
+  _head = 0;
+  _tail = 0;
+  _count = 0;
+  for (uint8_t i = 0; i < kMaxIntents; ++i) {
+    _queuedAt[i] = 0;
+    _queue[i] = {};
+  }
+}

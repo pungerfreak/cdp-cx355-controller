@@ -14,7 +14,7 @@ CddbIndexer::CddbIndexer(SLinkSystem& system,
       maxDiscs_(maxDiscs) {}
 
 void CddbIndexer::start() {
-  if (state_ != State::Idle) return;
+  if (state_ != State::Idle && state_ != State::Done && state_ != State::Failed) return;
   disc_ = 1;
   attempt_ = 0;
   currentSaved_ = false;
@@ -22,8 +22,14 @@ void CddbIndexer::start() {
   unitsDone_ = 0;
   unitsTotal_ = static_cast<uint32_t>(maxDiscs_) * kPlaceholderTracksPerDisc;
   memset(trackCounts_, 0, sizeof(trackCounts_));
+  discReady_ = false;
   advanceState_(State::Stopping);
-  Serial.println("cddb indexer: start");
+}
+
+void CddbIndexer::abort() {
+  if (state_ == State::Idle || state_ == State::Done) return;
+  lookup_.cancel();
+  state_ = State::Done;
 }
 
 void CddbIndexer::tick(uint32_t nowMs) {
@@ -46,7 +52,6 @@ void CddbIndexer::tick(uint32_t nowMs) {
         break;
     }
     if (elapsed > limit) {
-      Serial.println("cddb indexer: stage timeout");
       advanceState_(State::Failed);
       return;
     }
@@ -58,30 +63,41 @@ void CddbIndexer::tick(uint32_t nowMs) {
       return;
     case State::Stopping: {
       if (intents_.stop()) {
+        discReady_ = false;
         advanceState_(State::ChangeDisc);
       }
       break;
     }
     case State::ChangeDisc: {
       if (disc_ > maxDiscs_) {
-        Serial.print("cddb indexer: reached max discs (");
-        Serial.print(maxDiscs_);
-        Serial.println(")");
         advanceState_(State::Done);
         return;
       }
-      lookup_.clearTrackCountHint();
-      attempt_ = 0;
-      if (storage_.has(disc_)) {
-        Serial.print("cddb indexer: will overwrite disc ");
-        Serial.println(disc_);
+      while (disc_ <= maxDiscs_) {
+        lookup_.clearTrackCountHint();
+        attempt_ = 0;
+        discReady_ = false;
+        if (storage_.has(disc_)) {
+          uint8_t storedCount = 0;
+          if (storage_.trackCount(disc_, storedCount) && storedCount > 0) {
+            setTrackCount_(disc_, storedCount);
+            unitsDone_ += trackCounts_[disc_] ? trackCounts_[disc_] : kPlaceholderTracksPerDisc;
+            ++disc_;
+            continue;
+          } else {
+            // Corrupt or unreadable entry; re-index it.
+            storage_.remove(disc_);
+            setTrackCount_(disc_, 0);
+          }
+        }
+        break;
+      }
+      if (disc_ > maxDiscs_) {
+        advanceState_(State::Done);
+        return;
       }
       if (intents_.changeDisc(disc_)) {
-        Serial.print("cddb indexer: sent changeDisc ");
-        Serial.println(disc_);
         advanceState_(State::WaitDiscReady);
-      } else {
-        Serial.println("cddb indexer: changeDisc rejected");
       }
       break;
     }
@@ -96,11 +112,8 @@ void CddbIndexer::tick(uint32_t nowMs) {
       if ((discInfo.present && discInfo.valid && discInfo.disc == disc_) ||
           (millis() - stageStartedMs_) > 2000) {
         if (lookup_.lookup(disc_)) {
-          Serial.print("cddb indexer: lookup start disc ");
-          Serial.println(disc_);
           advanceState_(State::Collecting);
         } else {
-          Serial.println("cddb indexer: lookup start failed");
           if (++attempt_ < 3) {
             advanceState_(State::WaitDiscReady);
           } else {
@@ -152,25 +165,17 @@ CddbIndexStatus CddbIndexer::status() const {
                   : static_cast<uint8_t>(min<uint32_t>(100, (doneUnits * 100u) / totalUnits));
   switch (state_) {
     case State::Idle:
-      s.stage = "idle";
+    case State::Done:
+      s.stage = "";
       break;
     case State::Stopping:
-      s.stage = "stopping";
-      break;
     case State::ChangeDisc:
-      s.stage = "change disc";
+    case State::WaitDiscReady:
+      s.stage = "changing disc";
       break;
     case State::Collecting:
-      s.stage = "collecting";
-      break;
     case State::Querying:
-      s.stage = "querying";
-      break;
-    case State::WaitDiscReady:
-      s.stage = "waiting disc";
-      break;
-    case State::Done:
-      s.stage = "done";
+      s.stage = discReady_ ? "reading disc" : "changing disc";
       break;
     case State::Failed:
       s.stage = "failed";
@@ -184,31 +189,20 @@ void CddbIndexer::advanceState_(State next) {
   stageStartedMs_ = millis();
   switch (state_) {
     case State::Stopping:
-      Serial.println("cddb indexer: stopping playback");
       break;
     case State::ChangeDisc:
-      Serial.print("cddb indexer: change disc ");
-      Serial.println(disc_);
       break;
     case State::WaitDiscReady:
-      Serial.print("cddb indexer: wait disc ready ");
-      Serial.println(disc_);
       break;
     case State::Collecting:
       attempt_ = 0;
-      Serial.print("cddb indexer: collecting disc ");
-      Serial.println(disc_);
       break;
     case State::Querying:
       attempt_ = 0;
-      Serial.print("cddb indexer: querying disc ");
-      Serial.println(disc_);
       break;
     case State::Done:
-      Serial.println("cddb indexer: done");
       break;
     case State::Failed:
-      Serial.println("cddb indexer: failed");
       break;
     case State::Idle:
     default:
@@ -227,11 +221,8 @@ void CddbIndexer::handleCollecting_(uint32_t nowMs) {
   if (lookup_.hasResult()) {
     if (lookup_.result().success) {
       setTrackCount_(disc_, lookup_.result().trackCount);
-      Serial.print("cddb indexer: lookup complete disc ");
-      Serial.println(disc_);
       advanceState_(State::Querying);
     } else {
-      Serial.println("cddb indexer: lookup failed");
       if (++attempt_ < 3) {
         advanceState_(State::WaitDiscReady);
       } else {
@@ -244,19 +235,17 @@ void CddbIndexer::handleCollecting_(uint32_t nowMs) {
   if (seen != lastTracksSeen_) {
     lastTracksSeen_ = seen;
     stageStartedMs_ = nowMs;
+    if (seen > 0) {
+      discReady_ = true;
+    }
   }
 }
 
 void CddbIndexer::handleQuerying_() {
   const auto& res = lookup_.result();
   CddbMetadata meta{};
-  Serial.print("cddb indexer: query cmd ");
-  Serial.println(res.cmd);
-  Serial.print("cddb indexer: query url ");
-  Serial.println(res.url);
   setTrackCount_(disc_, res.trackCount);
   if (!client_.queryAndRead(res.cmd, meta)) {
-    Serial.println("cddb indexer: query/read failed");
     if (++attempt_ < 3) {
       stageStartedMs_ = millis();
       return;
@@ -289,13 +278,8 @@ void CddbIndexer::handleQuerying_() {
 void CddbIndexer::persist_(const CddbMetadata& meta) {
   if (currentSaved_) return;
   if (storage_.save(disc_, meta, lookup_.result())) {
-    Serial.print("cddb indexer: saved disc ");
-    Serial.println(disc_);
-  } else {
-    Serial.print("cddb indexer: save failed for disc ");
-    Serial.println(disc_);
+    currentSaved_ = true;
   }
-  currentSaved_ = true;
 }
 
 void CddbIndexer::setTrackCount_(uint16_t disc, uint8_t tracks) {

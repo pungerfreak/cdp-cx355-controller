@@ -1,15 +1,18 @@
 #include "io/SLinkCommandConsole.h"
 #include <string.h>
 #include "transport/SLinkTx.h"
+#include "cddb/CddbStorage.h"
+#include "SPIFFS.h"
 
 SLinkCommandConsole::SLinkCommandConsole(Stream& io,
                                          SLinkCommandIntentSource& input,
                                          bool printTx,
-                                         SLinkTx* rawTx)
-    : _io(io), _input(input), _rawTx(rawTx), _printTx(printTx) {}
+                                         SLinkTx* rawTx,
+                                         CddbStorage* cddbStorage)
+    : _io(io), _input(input), _rawTx(rawTx), _cddbStorage(cddbStorage), _printTx(printTx) {}
 
 void SLinkCommandConsole::printHelp() {
-  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, SEND <HEX>, GET_CURRENT_DISC, GET_STATUS");
+  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, GET_DISC_INFO, SEND <HEX>, GET_CURRENT_DISC, GET_STATUS, CDDB_STATUS, CDDB_LIST, CDDB_SHOW <disc>");
 }
 
 bool SLinkCommandConsole::isWhitespace(char c) {
@@ -209,6 +212,17 @@ bool SLinkCommandConsole::dispatchTrack(const char* cmd) {
   return true;
 }
 
+bool SLinkCommandConsole::dispatchDiscInfo(const char* cmd) {
+  if (!cmd || strcmp(cmd, "GET_DISC_INFO") != 0) {
+    return false;
+  }
+  printTx("GET_DISC_INFO");
+  if (!_input.getDiscInfo()) {
+    _io.println("unsupported: GET_DISC_INFO");
+  }
+  return true;
+}
+
 bool SLinkCommandConsole::dispatchSend(const char* cmd) {
   const char* prefix = "SEND ";
   const size_t len = strlen(prefix);
@@ -240,6 +254,67 @@ bool SLinkCommandConsole::dispatchSend(const char* cmd) {
   return true;
 }
 
+bool SLinkCommandConsole::dispatchCddb(const char* cmd) {
+  if (!_cddbStorage) return false;
+  if (strcmp(cmd, "CDDB_STATUS") == 0) {
+    _io.print("mounted=");
+    _io.println(_cddbStorage->mounted() ? "true" : "false");
+    _io.print("total=");
+    _io.print(SPIFFS.totalBytes());
+    _io.print(" used=");
+    _io.println(SPIFFS.usedBytes());
+    return true;
+  }
+  if (strcmp(cmd, "CDDB_LIST") == 0) {
+    File root = SPIFFS.open("/");
+    if (!root) {
+      _io.println("fs not available");
+      return true;
+    }
+    bool any = false;
+    for (File f = root.openNextFile(); f; f = root.openNextFile()) {
+      String name = f.name();
+      bool isCddb = name.startsWith("/cddb_") || name.startsWith("cddb_");
+      if (isCddb) {
+        any = true;
+      }
+      _io.print(name);
+      _io.print(" (");
+      _io.print(f.size());
+      _io.println(" bytes)");
+    }
+    if (!any) {
+      _io.println("no cddb files");
+    }
+    return true;
+  }
+
+  const char* prefix = "CDDB_SHOW ";
+  const size_t len = strlen(prefix);
+  if (cmd && strncmp(cmd, prefix, len) == 0) {
+    uint16_t disc = 0;
+    if (!parseNumber(cmd + len, disc)) {
+      _io.println("invalid: CDDB_SHOW");
+      return true;
+    }
+    String path = "/cddb_";
+    path += disc;
+    path += ".json";
+    File f = SPIFFS.open(path, FILE_READ);
+    if (!f) {
+      _io.println("not found");
+      return true;
+    }
+    while (f.available()) {
+      _io.write(f.read());
+    }
+    _io.println();
+    f.close();
+    return true;
+  }
+  return false;
+}
+
 void SLinkCommandConsole::handleLine(const char* line) {
   char normalized[kBufferSize];
   if (!normalizeCommand(line, normalized, sizeof(normalized))) return;
@@ -251,8 +326,10 @@ void SLinkCommandConsole::handleLine(const char* line) {
 
   if (dispatchSimple(normalized)) return;
   if (dispatchDisc(normalized)) return;
+  if (dispatchDiscInfo(normalized)) return;
   if (dispatchTrack(normalized)) return;
   if (dispatchSend(normalized)) return;
+  if (dispatchCddb(normalized)) return;
 
   _io.print("unknown: ");
   _io.println(normalized);
