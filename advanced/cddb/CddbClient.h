@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDDB_CLIENT_H_
+#define CDDB_CLIENT_H_
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -32,8 +33,8 @@ public:
 private:
   bool ensureWifi_();
   void disconnectWifi_();
-  String buildQueryUrl_(const String& cmd) const;
-  String buildReadUrl_(const String& discId) const;
+  String buildQueryUrl_(const String& cmd, const char* overrideSubdomain = nullptr) const;
+  String buildReadUrl_(const String& discId, const char* overrideSubdomain = nullptr) const;
   String httpGet_(const String& url);
   bool parseQuery_(const String& body, String& discIdOut);
   bool parseRead_(const String& body, CddbMetadata& out);
@@ -43,3 +44,5 @@ private:
 
   CddbClientConfig cfg_;
 };
+
+#endif  // CDDB_CLIENT_H_

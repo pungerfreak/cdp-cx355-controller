@@ -56,14 +56,57 @@ const CddbLookup::Result& CddbLookup::result() const {
 
 void CddbLookup::tick(uint32_t nowMs) {
   if (state_ == State::Idle || state_ == State::Complete || state_ == State::Failed) return;
-  const uint32_t timeoutMs = 8000;
+  const uint32_t timeoutMs = 20000;
   if ((int32_t)(nowMs - lastProgressMs_) > (int32_t)timeoutMs) {
-    finalizeFailure_();
+    if (highestTrackSeen_ > 0) {
+      finalizeSuccess_();
+    } else {
+      Serial.println("cddb lookup: timeout with no tracks");
+      finalizeFailure_();
+    }
+  }
+
+  // If we've seen READY/disc and haven't started track requests, start after a short debounce.
+  if (state_ == State::Collecting && readySeen_ && !trackRequestsStarted_) {
+    const bool waitForDiscInfo =
+        (trackCountHint_ == 0 && lastDiscInfoRequestMs_ != 0 &&
+         (int32_t)(nowMs - lastDiscInfoRequestMs_) < 500);
+    if (!waitForDiscInfo &&
+        (int32_t)(nowMs - readySeenMs_) >= (int32_t)kReadyDebounceMs) {
+      if (!requestTrack_(requestedTrack_)) {
+        // Retry later; keep waiting for the next chance until overall timeout.
+        readySeenMs_ = nowMs;
+      } else {
+        trackRequestsStarted_ = true;
+        lastProgressMs_ = nowMs;
+      }
+    }
+  }
+
+  if (state_ == State::Collecting && trackCountHint_ == 0 &&
+      (lastDiscInfoRequestMs_ == 0 ||
+       (int32_t)(nowMs - lastDiscInfoRequestMs_) >= 1000)) {
+    requestDiscInfo_();
   }
 }
 
 void CddbLookup::onUnitEvent(const SLinkUnitEvent& e) {
   if (state_ == State::Idle || state_ == State::Complete || state_ == State::Failed) {
+    return;
+  }
+
+  // READY arrives as a DiscChanged with an empty disc.
+  if (state_ == State::Collecting && !trackRequestsStarted_ &&
+      e.type == SLinkUnitEventType::DiscChanged && (!e.disc.present || !e.disc.valid)) {
+    readySeen_ = true;
+    readySeenMs_ = millis();
+    return;
+  }
+
+  // If we are already collecting and receive another empty-disc READY, treat it as end-of-list.
+  if (state_ == State::Collecting && trackRequestsStarted_ && highestTrackSeen_ > 0 &&
+      e.type == SLinkUnitEventType::DiscChanged && (!e.disc.present || !e.disc.valid)) {
+    finalizeSuccess_();
     return;
   }
 
@@ -78,11 +121,17 @@ void CddbLookup::onUnitEvent(const SLinkUnitEvent& e) {
 
   switch (e.type) {
     case SLinkUnitEventType::CurrentDiscInfo:
+      handleDiscInfoEvent_(e.disc);
+      if (e.track.present && e.track.valid) {
+        handleTrackEvent_(e.track);
+      }
+      break;
     case SLinkUnitEventType::TrackChanged:
       handleTrackEvent_(e.track);
       break;
     case SLinkUnitEventType::DiscChanged:
-      if (state_ == State::Collecting && targetDisc_ != 0 && e.disc.disc != targetDisc_) {
+      if (state_ == State::Collecting && targetDisc_ != 0 && e.disc.valid && e.disc.disc != targetDisc_) {
+        Serial.println("cddb lookup: disc changed away from target");
         finalizeFailure_();
       }
       break;
@@ -96,10 +145,20 @@ void CddbLookup::resetState_() {
   targetDisc_ = 0;
   requestedTrack_ = 0;
   highestTrackSeen_ = 0;
+  trackRequestsStarted_ = false;
+  readySeen_ = false;
+  readySeenMs_ = 0;
+  trackCountHint_ = 0;
+  lastDiscInfoRequestMs_ = 0;
   result_ = Result{};
   for (uint8_t i = 0; i < kMaxTracks; ++i) {
     tracks_[i] = TrackLength{};
   }
+}
+
+void CddbLookup::clearTrackCountHint() {
+  trackCountHint_ = 0;
+  lastDiscInfoRequestMs_ = 0;
 }
 
 void CddbLookup::beginCollection_() {
@@ -110,10 +169,13 @@ void CddbLookup::beginCollection_() {
   state_ = State::Collecting;
   requestedTrack_ = 1;
   highestTrackSeen_ = 0;
+  trackRequestsStarted_ = false;
+  readySeen_ = false;
+  readySeenMs_ = 0;
   lastProgressMs_ = millis();
-  if (!requestTrack_(requestedTrack_)) {
-    finalizeFailure_();
-  }
+  lastDiscInfoRequestMs_ = 0;
+  requestDiscInfo_();
+  requestStatus_();  // prompt READY/DISC info
 }
 
 void CddbLookup::handleDiscEvent_(const SLinkDiscInfo& disc) {
@@ -121,12 +183,21 @@ void CddbLookup::handleDiscEvent_(const SLinkDiscInfo& disc) {
   if (targetDisc_ == 0) {
     targetDisc_ = disc.disc;
   }
+  if (disc.trackCountValid && disc.trackCount > 0 && disc.disc == targetDisc_) {
+    trackCountHint_ = disc.trackCount;
+  }
+  // Seeing a valid disc means the unit is ready for track requests.
+  if (state_ == State::Collecting && !trackRequestsStarted_) {
+    readySeen_ = true;
+    readySeenMs_ = millis();
+    // defer actual track request to tick() to allow debounce
+  }
 }
 
 void CddbLookup::handleTrackEvent_(const SLinkTrackInfo& track) {
   if (state_ != State::Collecting) return;
   if (!track.present || !track.valid) {
-    finalizeFailure_();
+    // Ignore incomplete track notifications; keep waiting until timeout.
     return;
   }
 
@@ -137,12 +208,10 @@ void CddbLookup::handleTrackEvent_(const SLinkTrackInfo& track) {
   }
 
   if (track.track == 0 || track.track > kMaxTracks) {
-    finalizeFailure_();
     return;
   }
   if (track.track != requestedTrack_) return;
   if (!track.lengthPresent || !track.lengthValid) {
-    finalizeFailure_();
     return;
   }
 
@@ -156,6 +225,11 @@ void CddbLookup::handleTrackEvent_(const SLinkTrackInfo& track) {
   }
   lastProgressMs_ = millis();
 
+  if (trackCountHint_ > 0 && track.track >= trackCountHint_) {
+    finalizeSuccess_();
+    return;
+  }
+
   if (track.track >= kMaxTracks) {
     finalizeSuccess_();
     return;
@@ -163,12 +237,33 @@ void CddbLookup::handleTrackEvent_(const SLinkTrackInfo& track) {
 
   const uint8_t nextTrack = static_cast<uint8_t>(track.track + 1);
   if (!requestTrack_(nextTrack)) {
-    finalizeFailure_();
+    // Retry later; mark not started so tick() will retry after debounce.
+    trackRequestsStarted_ = false;
+    readySeen_ = true;
+    readySeenMs_ = millis();
+  }
+}
+
+void CddbLookup::handleDiscInfoEvent_(const SLinkDiscInfo& disc) {
+  if (!disc.present || !disc.valid) return;
+  if (targetDisc_ != 0 && disc.disc != targetDisc_) return;
+  if (disc.trackCountValid && disc.trackCount > 0) {
+    trackCountHint_ = disc.trackCount;
   }
 }
 
 void CddbLookup::requestStatus_() {
   intents_.getStatus();
+}
+
+void CddbLookup::requestDiscInfo_() {
+  if (targetDisc_ == 0) return;
+  uint32_t now = millis();
+  if (intents_.getDiscInfo()) {
+    lastDiscInfoRequestMs_ = now;
+  } else if (lastDiscInfoRequestMs_ == 0) {
+    lastDiscInfoRequestMs_ = now;
+  }
 }
 
 bool CddbLookup::requestTrack_(uint8_t track) {
@@ -189,6 +284,16 @@ void CddbLookup::finalizeSuccess_() {
 
 void CddbLookup::finalizeFailure_() {
   if (state_ == State::Complete || state_ == State::Failed) return;
+  Serial.print("cddb lookup: finalize failure (state=");
+  Serial.print(static_cast<int>(state_));
+  Serial.print(" requestedTrack=");
+  Serial.print(requestedTrack_);
+  Serial.print(" highestSeen=");
+  Serial.print(highestTrackSeen_);
+  Serial.print(" readySeen=");
+  Serial.print(readySeen_);
+  Serial.print(" trackStarted=");
+  Serial.println(trackRequestsStarted_);
   state_ = State::Failed;
   result_.ready = true;
   result_.success = false;
@@ -198,6 +303,8 @@ bool CddbLookup::buildResult_() {
   if (targetDisc_ == 0 || highestTrackSeen_ == 0) return false;
   for (uint8_t i = 0; i < highestTrackSeen_; ++i) {
     if (!tracks_[i].present) {
+      Serial.print("cddb lookup: missing track ");
+      Serial.println(i + 1);
       return false;
     }
   }

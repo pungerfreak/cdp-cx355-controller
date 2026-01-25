@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CDDB_LOOKUP_H_
+#define CDDB_LOOKUP_H_
 #include <Arduino.h>
 #include "system/SLinkSystem.h"
 #include "unit/SLinkUnitEvents.h"
@@ -11,10 +12,14 @@ struct CddbLookupConfig {
   const char* appVersion = nullptr;
 };
 
+static const CddbLookupConfig kDefaultCddbConfig = {
+    kCddbApiSubdomain, kCddbHelloEmail, kCddbHelloAppName, kCddbHelloVersion};
+
 class CddbLookup : public SLinkUnitEventObserver {
 public:
   static constexpr uint8_t kMaxTracks = 99;
   static constexpr uint16_t kDefaultLeadInFrames = 150;
+  static constexpr uint16_t kReadyDebounceMs = 200;
 
   struct Result {
     bool ready = false;
@@ -42,6 +47,10 @@ public:
   bool hasResult() const;
   const Result& result() const;
   void tick(uint32_t nowMs);
+  uint8_t requestedTrack() const { return requestedTrack_; }
+  uint8_t tracksSeen() const { return highestTrackSeen_; }
+  uint8_t trackCountHint() const { return trackCountHint_; }
+  void clearTrackCountHint();
 
   // SLinkUnitEventObserver
   void onUnitEvent(const SLinkUnitEvent& e) override;
@@ -65,8 +74,10 @@ private:
   void resetState_();
   void beginCollection_();
   void handleDiscEvent_(const SLinkDiscInfo& disc);
+  void handleDiscInfoEvent_(const SLinkDiscInfo& disc);
   void handleTrackEvent_(const SLinkTrackInfo& track);
   void requestStatus_();
+  void requestDiscInfo_();
   bool requestTrack_(uint8_t track);
   void finalizeSuccess_();
   void finalizeFailure_();
@@ -84,11 +95,15 @@ private:
   uint16_t targetDisc_ = 0;
   uint8_t requestedTrack_ = 0;
   uint8_t highestTrackSeen_ = 0;
+  bool trackRequestsStarted_ = false;
+  bool readySeen_ = false;
+  uint32_t readySeenMs_ = 0;
+  uint8_t trackCountHint_ = 0;
+  uint32_t lastDiscInfoRequestMs_ = 0;
   uint32_t startMs_ = 0;
   uint32_t lastProgressMs_ = 0;
   TrackLength tracks_[kMaxTracks];
   Result result_;
 };
 
-constexpr CddbLookupConfig kDefaultCddbConfig{
-    kCddbApiSubdomain, kCddbHelloEmail, kCddbHelloAppName, kCddbHelloVersion};
+#endif  // CDDB_LOOKUP_H_

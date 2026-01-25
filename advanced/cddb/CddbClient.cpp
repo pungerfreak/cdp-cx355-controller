@@ -1,13 +1,29 @@
 #include "cddb/CddbClient.h"
 #include <ctype.h>
+#include <string.h>
+
+namespace {
+String firstLine(const String& body) {
+  int end = body.indexOf('\n');
+  if (end < 0) end = body.length();
+  return body.substring(0, end);
+}
+}  // namespace
 
 CddbClient::CddbClient(const CddbClientConfig& cfg) : cfg_(cfg) {}
 
 bool CddbClient::queryAndRead(const String& queryCmd, CddbMetadata& out) {
   if (!ensureWifi_()) return false;
 
-  const String queryUrl = buildQueryUrl_(queryCmd);
+  const char* primarySub = (cfg_.apiSubdomain && cfg_.apiSubdomain[0]) ? cfg_.apiSubdomain : "freedb";
+  const bool tryFallback = strcmp(primarySub, "freedb") != 0;
+
+  String queryUrl = buildQueryUrl_(queryCmd, primarySub);
   String queryBody = httpGet_(queryUrl);
+  if (queryBody.length() == 0 && tryFallback) {
+    queryUrl = buildQueryUrl_(queryCmd, "freedb");
+    queryBody = httpGet_(queryUrl);
+  }
   if (queryBody.length() == 0) {
     disconnectWifi_();
     return false;
@@ -19,8 +35,12 @@ bool CddbClient::queryAndRead(const String& queryCmd, CddbMetadata& out) {
     return false;
   }
 
-  const String readUrl = buildReadUrl_(discId);
+  String readUrl = buildReadUrl_(discId, primarySub);
   String readBody = httpGet_(readUrl);
+  if (readBody.length() == 0 && tryFallback) {
+    readUrl = buildReadUrl_(discId, "freedb");
+    readBody = httpGet_(readUrl);
+  }
   if (readBody.length() == 0) {
     disconnectWifi_();
     return false;
@@ -42,7 +62,11 @@ bool CddbClient::ensureWifi_() {
   while (WiFi.status() != WL_CONNECTED && (millis() - start) < 10000) {
     delay(50);
   }
-  return WiFi.status() == WL_CONNECTED;
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("cddb client: wifi connect failed");
+    return false;
+  }
+  return true;
 }
 
 void CddbClient::disconnectWifi_() {
@@ -50,13 +74,18 @@ void CddbClient::disconnectWifi_() {
   WiFi.mode(WIFI_OFF);
 }
 
-String CddbClient::buildQueryUrl_(const String& cmd) const {
+String CddbClient::buildQueryUrl_(const String& cmd, const char* overrideSubdomain) const {
   String url = "http://";
-  url += (cfg_.apiSubdomain && cfg_.apiSubdomain[0]) ? cfg_.apiSubdomain : "freedb";
+  const char* sub = (overrideSubdomain && overrideSubdomain[0])
+                        ? overrideSubdomain
+                        : ((cfg_.apiSubdomain && cfg_.apiSubdomain[0]) ? cfg_.apiSubdomain : "freedb");
+  url += sub;
   url += ".gnudb.org/~cddb/cddb.cgi?cmd=";
   url += cmd;
   url += "&hello=";
-  url += (cfg_.helloEmail && cfg_.helloEmail[0]) ? cfg_.helloEmail : "email@example.com";
+  String email = (cfg_.helloEmail && cfg_.helloEmail[0]) ? String(cfg_.helloEmail) : String("email@example.com");
+  email.replace('@', '+');  // gnudb expects '+' instead of '@' in the hello email
+  url += email;
   url += "+";
   url += (cfg_.helloApp && cfg_.helloApp[0]) ? cfg_.helloApp : "s-link";
   url += "+";
@@ -65,23 +94,33 @@ String CddbClient::buildQueryUrl_(const String& cmd) const {
   return url;
 }
 
-String CddbClient::buildReadUrl_(const String& discId) const {
+String CddbClient::buildReadUrl_(const String& discId, const char* overrideSubdomain) const {
   String cmd = "cddb+read+data+";
   cmd += discId;
-  return buildQueryUrl_(cmd);
+  return buildQueryUrl_(cmd, overrideSubdomain);
 }
 
 String CddbClient::httpGet_(const String& url) {
   WiFiClient client;
   HTTPClient http;
   if (!http.begin(client, url)) {
+    Serial.println("cddb client: http begin failed");
     return "";
   }
   const int code = http.GET();
   String body;
   if (code > 0) {
     body = http.getString();
+  } else {
+    Serial.print("cddb client: http error ");
+    Serial.println(code);
   }
+  Serial.print("cddb client: GET ");
+  Serial.print(url);
+  Serial.print(" code=");
+  Serial.print(code);
+  Serial.print(" len=");
+  Serial.println(body.length());
   http.end();
   return body;
 }
@@ -93,7 +132,13 @@ bool CddbClient::parseQuery_(const String& body, String& discIdOut) {
   String statusLine = body.substring(start, end);
   statusLine.trim();
   const int status = parseStatus_(statusLine);
-  if (status == 0 || status == 202 || status == 403) return false;
+  if (status == 0 || status == 202 || status == 403) {
+    Serial.print("cddb client: query status ");
+    Serial.print(status);
+    Serial.print(" line=");
+    Serial.println(statusLine);
+    return false;
+  }
 
   start = end + 1;
   while (start < body.length()) {
@@ -112,6 +157,10 @@ bool CddbClient::parseQuery_(const String& body, String& discIdOut) {
   if (discIdOut.isEmpty()) {
     parseCandidateLine_(statusLine, discIdOut);
   }
+  if (discIdOut.isEmpty()) {
+    Serial.print("cddb client: no disc id; first line: ");
+    Serial.println(firstLine(body));
+  }
   return !discIdOut.isEmpty();
 }
 
@@ -124,7 +173,13 @@ bool CddbClient::parseRead_(const String& body, CddbMetadata& out) {
   String statusLine = body.substring(start, end);
   statusLine.trim();
   const int status = parseStatus_(statusLine);
-  if (status != 210) return false;
+  if (status != 210) {
+    Serial.print("cddb client: read status ");
+    Serial.print(status);
+    Serial.print(" line=");
+    Serial.println(statusLine);
+    return false;
+  }
 
   start = end + 1;
   while (start < body.length()) {
@@ -180,12 +235,23 @@ bool CddbClient::parseCandidateLine_(const String& line, String& discIdOut) cons
   String working = line;
   working.trim();
   if (working.startsWith("data ")) {
-    int firstSpace = working.indexOf(' ', 5);
-    if (firstSpace < 0) firstSpace = working.length();
+    int firstSpace = working.indexOf(' ');
     int secondSpace = working.indexOf(' ', firstSpace + 1);
     if (secondSpace < 0) secondSpace = working.length();
     discIdOut = working.substring(firstSpace + 1, secondSpace);
-    return true;
+    return !discIdOut.isEmpty();
+  }
+
+  // Status line for 200 responses: "200 <category> <discid> ..."
+  if (parseStatus_(working) == 200) {
+    int first = working.indexOf(' ');
+    if (first < 0) return false;
+    int second = working.indexOf(' ', first + 1);
+    if (second < 0) return false;
+    int third = working.indexOf(' ', second + 1);
+    if (third < 0) third = working.length();
+    discIdOut = working.substring(second + 1, third);
+    return !discIdOut.isEmpty();
   }
 
   // generic: second token is disc id
