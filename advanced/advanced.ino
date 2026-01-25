@@ -9,6 +9,7 @@
 
 #include "io/SLinkCommandConsole.h"
 #include "io/SLinkPrettyPrinter.h"
+#include "io/ConsoleAdapter.h"
 #include "system/SLinkSystem.h"
 #include "ui/UiApp.h"
 #include "ui/UiAdapter.h"
@@ -18,6 +19,7 @@ constexpr bool kDebugToSerial = true;
 static SLinkSystem slinkSystem(Serial, kDebugToSerial);
 static SLinkCommandConsole slinkConsole(Serial, slinkSystem.intentSource(), true, &slinkSystem.tx());
 static SLinkPrettyPrinter slinkPrinter(Serial);
+static ConsoleAdapter consoleAdapter(slinkSystem, slinkConsole, slinkPrinter);
 static UiApp app;
 static UiAdapter adapter(slinkSystem, app);
 
@@ -47,13 +49,13 @@ void setup() {
   install_touch_gap_filter();
 
   app.init();
-  slinkSystem.addCommandInput(slinkConsole);
-  slinkSystem.addEventOutput(slinkPrinter);
   slinkSystem.begin();
+  consoleAdapter.start();
   adapter.start();
 }
 
 void loop() {
+  consoleAdapter.poll();
   slinkSystem.poll();
   lv_timer_handler();  // let the GUI do its work
   delay(1);

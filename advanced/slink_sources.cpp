@@ -13,6 +13,7 @@
 #include "intent/SLinkIntentQueueAdapter.cpp"
 #include "io/SLinkCommandConsole.cpp"
 #include "io/SLinkPrettyPrinter.cpp"
+#include "io/ConsoleAdapter.cpp"
 #include "system/SLinkSystem.cpp"
 #include "transport/SLinkBusState.cpp"
 #include "transport/SLinkDecode.cpp"

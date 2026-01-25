@@ -68,25 +68,8 @@ void SLinkSystem::poll() {
     _intentAdapter.getStatus();
     _pendingStatusRequest = false;
   }
-  for (uint8_t i = 0; i < _commandInputCount; ++i) {
-    if (_commandInputs[i] != nullptr) {
-      _commandInputs[i]->poll();
-    }
-  }
   _intentProcessor.poll();
   _slinkRx.poll(5000);
-}
-
-bool SLinkSystem::addCommandInput(SLinkCommandInput& input) {
-  if (_commandInputCount >= kMaxCommandInputs) return false;
-  _commandInputs[_commandInputCount++] = &input;
-  return true;
-}
-
-bool SLinkSystem::addEventOutput(SLinkUnitEventHandler& output) {
-  if (_eventOutputCount >= kMaxEventOutputs) return false;
-  _eventOutputs[_eventOutputCount++] = &output;
-  return _frameCallbacks.addOutputHandler(output);
 }
 
 bool SLinkSystem::addUnitObserver(SLinkUnitEventObserver& observer) {
@@ -121,13 +104,4 @@ void SLinkSystem::emitInitialState() {
   SLinkDiscInfo discInfo;
   SLinkTrackInfo trackInfo;
   _unitStateStore.stateInfo(discInfo, trackInfo);
-  for (uint8_t i = 0; i < _eventOutputCount; ++i) {
-    if (_eventOutputs[i] != nullptr) {
-      if (trackInfo.present) {
-        _eventOutputs[i]->changeTrack(discInfo, trackInfo, nullptr);
-      } else if (discInfo.present) {
-        _eventOutputs[i]->changeDisc(discInfo, nullptr);
-      }
-    }
-  }
 }
