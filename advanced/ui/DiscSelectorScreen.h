@@ -20,7 +20,11 @@ class DiscSelectorScreen {
     lv_obj_t* root_ = nullptr;
     lv_obj_t* keypadEntry_ = nullptr;
     lv_obj_t* keypadError_ = nullptr;
-    ActionBinding bindings_[14]{};
+    lv_obj_t* backspaceImg_ = nullptr;
+    lv_obj_t* topBar_ = nullptr;
+    int32_t entryZoom_ = 384;
+    ActionBinding backspaceBinding_{UiAction::KeypadBackspace, this};
+    ActionBinding bindings_[11]{};
 
     UiActionCb cb_ = nullptr;
     void* user_ = nullptr;
@@ -32,4 +36,5 @@ class DiscSelectorScreen {
     void emitAction_(UiAction action);
     void handleKeypadInput_(UiAction action);
     void updateKeypadDisplay_();
+    void updateBackspacePosition_();
 };
