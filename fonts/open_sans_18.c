@@ -729,7 +729,7 @@ static const lv_font_fmt_txt_glyph_dsc_t open_sans_18_glyph_dsc[] = {
  *  CHARACTER MAPPING
  *--------------------*/
 
-static const uint16_t unicode_list_0[] = {
+static const uint16_t open_sans_18_unicode_list_0[] = {
     0x0, 0xd
 };
 
@@ -738,7 +738,7 @@ static const lv_font_fmt_txt_cmap_t open_sans_18_cmaps[] =
 {
     {
         .range_start = 32, .range_length = 14, .glyph_id_start = 1,
-        .unicode_list = unicode_list_0, .glyph_id_ofs_list = NULL, .list_length = 2, .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
+        .unicode_list = open_sans_18_unicode_list_0, .glyph_id_ofs_list = NULL, .list_length = 2, .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
     },
     {
         .range_start = 48, .range_length = 10, .glyph_id_start = 3,
@@ -799,17 +799,17 @@ lv_font_t open_sans_18 = {
 #endif
     .get_glyph_dsc = lv_font_get_glyph_dsc_fmt_txt,    /*Function pointer to get glyph's data*/
     .get_glyph_bitmap = lv_font_get_bitmap_fmt_txt,    /*Function pointer to get glyph's bitmap*/
+    .release_glyph = NULL,
     .line_height = 18,          /*The maximum line height required by the font*/
     .base_line = 4,             /*Baseline measured from the bottom of the line*/
 #if !(LVGL_VERSION_MAJOR == 6 && LVGL_VERSION_MINOR == 0)
     .subpx = LV_FONT_SUBPX_NONE,
 #endif
-#if LV_VERSION_CHECK(7, 4, 0) || LVGL_VERSION_MAJOR >= 8
+    .kerning = LV_FONT_KERNING_NONE,
+    .static_bitmap = 0,
     .underline_position = -1,
     .underline_thickness = 0,
-#endif
-    .static_bitmap = 0,
-    .dsc = &font_dsc,          /*The custom font data. Will be accessed by `get_glyph_bitmap/dsc` */
+    .dsc = &open_sans_18_font_dsc,          /*The custom font data. Will be accessed by `get_glyph_bitmap/dsc` */
 #if LV_VERSION_CHECK(8, 2, 0) || LVGL_VERSION_MAJOR >= 9
     .fallback = NULL,
 #endif
