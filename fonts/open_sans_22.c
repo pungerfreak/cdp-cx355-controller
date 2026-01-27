@@ -31,7 +31,7 @@
  *----------------*/
 
 /*Store the image of the glyphs*/
-static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
+static LV_ATTRIBUTE_LARGE_CONST const uint8_t open_sans_22_glyph_bitmap[] = {
     /* U+0030 "0" */
     0x0, 0x5, 0xcf, 0xfe, 0x91, 0x0, 0x0, 0x8f,
     0xff, 0xff, 0xfe, 0x10, 0x4, 0xff, 0xfc, 0xaf,
@@ -175,7 +175,7 @@ static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
  *  GLYPH DESCRIPTION
  *--------------------*/
 
-static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
+static const lv_font_fmt_txt_glyph_dsc_t open_sans_22_glyph_dsc[] = {
     {.bitmap_index = 0, .adv_w = 0, .box_w = 0, .box_h = 0, .ofs_x = 0, .ofs_y = 0} /* id = 0 reserved */,
     {.bitmap_index = 0, .adv_w = 201, .box_w = 12, .box_h = 15, .ofs_x = 0, .ofs_y = 0},
     {.bitmap_index = 90, .adv_w = 201, .box_w = 9, .box_h = 15, .ofs_x = 1, .ofs_y = 0},
@@ -196,7 +196,7 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
 
 
 /*Collect the unicode lists and glyph_id offsets*/
-static const lv_font_fmt_txt_cmap_t cmaps[] =
+static const lv_font_fmt_txt_cmap_t open_sans_22_cmaps[] =
 {
     {
         .range_start = 48, .range_length = 10, .glyph_id_start = 1,
@@ -216,13 +216,13 @@ static  lv_font_fmt_txt_glyph_cache_t cache;
 #endif
 
 #if LVGL_VERSION_MAJOR >= 8
-static const lv_font_fmt_txt_dsc_t font_dsc = {
+static const lv_font_fmt_txt_dsc_t open_sans_22_font_dsc = {
 #else
-static lv_font_fmt_txt_dsc_t font_dsc = {
+static lv_font_fmt_txt_dsc_t open_sans_22_font_dsc = {
 #endif
-    .glyph_bitmap = glyph_bitmap,
-    .glyph_dsc = glyph_dsc,
-    .cmaps = cmaps,
+    .glyph_bitmap = open_sans_22_glyph_bitmap,
+    .glyph_dsc = open_sans_22_glyph_dsc,
+    .cmaps = open_sans_22_cmaps,
     .kern_dsc = NULL,
     .kern_scale = 0,
     .cmap_num = 1,
@@ -257,7 +257,7 @@ lv_font_t open_sans_22 = {
     .static_bitmap = 0,
     .underline_position = -1,
     .underline_thickness = 1,
-    .dsc = &font_dsc,          /*The custom font data. Will be accessed by `get_glyph_bitmap/dsc` */
+    .dsc = &open_sans_22_font_dsc,          /*The custom font data. Will be accessed by `get_glyph_bitmap/dsc` */
     .fallback = NULL,
     .user_data = NULL,
 };
