@@ -111,11 +111,12 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_t* trackIcon = lv_img_create(discTrackRow_);
     lv_img_set_src(trackIcon, &track);
     lv_obj_set_size(trackIcon, track.header.w, track.header.h);
+    topRowTrack_ = trackIcon;
 
     // Track label
     topRowTrackLabel_ = lv_label_create(discTrackRow_);
     lv_label_set_text(topRowTrackLabel_, "3");
-    lv_obj_add_style(topRowDiscLabel_, &style_font_bold, 0);
+    lv_obj_add_style(topRowTrackLabel_, &style_font_bold, 0);
     lv_obj_set_width(topRowTrackLabel_, 25);
     lv_obj_set_style_text_color(topRowTrackLabel_, color_txt, 0);
 
