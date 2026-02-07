@@ -34,15 +34,23 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     const lv_color_t color_accent = lv_color_hex(0xDDCC0B);
     const lv_color_t color_txt = lv_color_hex(0xFFFFFF);
 
+    static lv_style_t style_font_normal;
+    lv_style_init(&style_font_normal);
+    lv_style_set_text_font(&style_font_normal, &open_sans_18);
+
+    static lv_style_t style_font_bold;
+    lv_style_init(&style_font_bold);
+    lv_style_set_text_font(&style_font_bold, &open_sans_18_bold);
+
     root_ = lv_obj_create(parent);
     setup_root_obj(root_);
     lv_obj_set_size(root_, screen_w, screen_h);
     lv_obj_set_layout(root_, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(root_, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(root_,
-        LV_FLEX_ALIGN_START,   // main axis (row = horizontal)
-        LV_FLEX_ALIGN_CENTER,   // cross axis (vertical)
-        LV_FLEX_ALIGN_CENTER    // track alignment (multi-row)
+        LV_FLEX_ALIGN_START,   // justify-content
+        LV_FLEX_ALIGN_CENTER,  // align-content
+        LV_FLEX_ALIGN_CENTER   // align-items
     );
 
     lv_obj_set_style_bg_color(root_, color_bg, 0);
@@ -64,11 +72,13 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     discTrackRow_ = lv_obj_create(root_);
     lv_obj_set_layout(discTrackRow_, LV_LAYOUT_FLEX);
     lv_obj_set_flex_align(discTrackRow_,
-        LV_FLEX_ALIGN_CENTER,   // main axis (row = horizontal)
-        LV_FLEX_ALIGN_CENTER,   // cross axis (vertical)
-        LV_FLEX_ALIGN_CENTER    // track alignment (multi-row)
+        LV_FLEX_ALIGN_CENTER,   // justify-content
+        LV_FLEX_ALIGN_CENTER,   // align-content
+        LV_FLEX_ALIGN_CENTER    // align-items
     );
+    lv_obj_set_style_pad_all(discTrackRow_, 0, 0);
     lv_obj_set_style_pad_column(discTrackRow_, 10, 0);
+    lv_obj_set_style_margin_top(discTrackRow_, 10, 0);
     lv_obj_set_style_border_width(discTrackRow_, 0, 0);
     lv_obj_set_style_bg_opa(discTrackRow_, LV_OPA_TRANSP, 0);
     lv_obj_set_size(discTrackRow_, LV_PCT(100), LV_SIZE_CONTENT);
@@ -81,8 +91,7 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     // Disc label
     topRowDiscLabel_ = lv_label_create(discTrackRow_);
     lv_label_set_text(topRowDiscLabel_, "3");
-    lv_obj_set_style_text_color(topRowDiscLabel_, color_accent, 0);
-    lv_obj_set_style_text_font(topRowDiscLabel_, &open_sans_18_bold, 0);
+    lv_obj_add_style(topRowDiscLabel_, &style_font_bold, 0);
     lv_obj_set_style_pad_right(topRowDiscLabel_, 10, 0);
     lv_obj_set_style_text_color(topRowDiscLabel_, color_txt, 0);
 
@@ -94,57 +103,66 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     // Track label
     topRowTrackLabel_ = lv_label_create(discTrackRow_);
     lv_label_set_text(topRowTrackLabel_, "3");
-    lv_obj_set_style_text_color(topRowTrackLabel_, color_accent, 0);
-    lv_obj_set_style_text_font(topRowTrackLabel_, &open_sans_18_bold, 0);
+    lv_obj_add_style(topRowDiscLabel_, &style_font_bold, 0);
     lv_obj_set_width(topRowTrackLabel_, 25);
     lv_obj_set_style_text_color(topRowTrackLabel_, color_txt, 0);
 
     // Middle: three-line segment
-    const lv_coord_t line_h = 20;
-    const lv_coord_t line_gap = 0;
     lv_obj_t* midContainer = lv_obj_create(root_);
     lv_obj_set_style_bg_opa(midContainer, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(midContainer, 0, 0);
+    lv_obj_set_style_pad_all(midContainer, 0, 0);
+    lv_obj_set_style_margin_ver(midContainer, 10, 0);
     lv_obj_set_size(midContainer, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_clear_flag(midContainer, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_layout(midContainer, LV_LAYOUT_FLEX);
     lv_obj_set_flex_flow(midContainer, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_flex_align(midContainer,
-        LV_FLEX_ALIGN_START,   // main axis (row = horizontal)
-        LV_FLEX_ALIGN_CENTER,   // cross axis (vertical)
-        LV_FLEX_ALIGN_CENTER    // track alignment (multi-row)
+        LV_FLEX_ALIGN_START,   // justify-content
+        LV_FLEX_ALIGN_CENTER,  // align-content
+        LV_FLEX_ALIGN_CENTER   // align-items
     );
 
+    static lv_style_t mid_label_style_base;
+    lv_style_init(&mid_label_style_base);
+    lv_style_set_text_align(&mid_label_style_base, LV_TEXT_ALIGN_CENTER);
+    lv_style_set_text_color(&mid_label_style_base, color_txt);
 
-    auto create_mid_label = [&](const char* text, lv_coord_t y, bool bold) -> lv_obj_t* {
-        lv_obj_t* lbl = lv_label_create(midContainer);
-        lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
-        lv_obj_set_style_text_color(lbl, color_accent, 0);
-        lv_obj_set_style_text_font(lbl, bold ? &open_sans_18_bold : &open_sans_18, 0);
-        lv_label_set_text(lbl, text);
-        return lbl;
-    };
+    midLine1_ = lv_label_create(midContainer);
+    lv_label_set_text(midLine1_, "ARTIST");
+    lv_obj_add_style(midLine1_, &mid_label_style_base, 0);
+    lv_obj_add_style(midLine1_, &style_font_bold, 0);
 
-    midLine1_ = create_mid_label("ARTIST", 0, true);
-    midLine2_ = create_mid_label("ALBUM", line_h + line_gap, false);
-    midLine3_ = create_mid_label("TITLE", (line_h + line_gap) * 2, false);
+    midLine2_ = lv_label_create(midContainer);
+    lv_label_set_text(midLine2_, "Album");
+    lv_obj_add_style(midLine2_, &mid_label_style_base, 0);
+    lv_obj_add_style(midLine2_, &style_font_normal, 0);
+
+    midLine3_ = lv_label_create(midContainer);
+    lv_label_set_text(midLine3_, "Title");
+    lv_obj_add_style(midLine3_, &mid_label_style_base, 0);
+    lv_obj_add_style(midLine3_, &style_font_normal, 0);
 
     // // Bottom: transport buttons
     lv_obj_t* controls = lv_obj_create(root_);
     lv_obj_set_layout(controls, LV_LAYOUT_FLEX);
     lv_obj_set_flex_align(controls,
-        LV_FLEX_ALIGN_CENTER,   // main axis (row = horizontal)
-        LV_FLEX_ALIGN_CENTER,   // cross axis (vertical)
-        LV_FLEX_ALIGN_CENTER    // track alignment (multi-row)
+        LV_FLEX_ALIGN_CENTER,   // justify-content
+        LV_FLEX_ALIGN_CENTER,   // align-content
+        LV_FLEX_ALIGN_CENTER    // align-items
     );
     lv_obj_set_style_bg_opa(controls, LV_OPA_TRANSP, 0);
     lv_obj_set_style_border_width(controls, 0, 0);
+    lv_obj_set_style_pad_all(controls, 0, 0);
     lv_obj_set_size(controls, LV_PCT(100), LV_SIZE_CONTENT);
     lv_obj_clear_flag(controls, LV_OBJ_FLAG_SCROLLABLE);
 
     lv_obj_t* prevBtn = lv_imgbtn_create(controls);
     lv_imgbtn_set_src(prevBtn, LV_IMGBTN_STATE_RELEASED, NULL, &prev_next, NULL);
     lv_obj_set_size(prevBtn, prev_next.header.w, prev_next.header.h);
+    lv_obj_set_style_transform_pivot_x(prevBtn, lv_pct(50), 0);
+    lv_obj_set_style_transform_pivot_y(prevBtn, lv_pct(50), 0);
+    lv_obj_set_style_transform_angle(prevBtn, 1800, 0);
 
     lv_obj_t* playBtn = lv_imgbtn_create(controls);
     lv_imgbtn_set_src(playBtn, LV_IMGBTN_STATE_RELEASED, NULL, &play, NULL);
@@ -153,8 +171,6 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_t* nextBtn = lv_imgbtn_create(controls);
     lv_imgbtn_set_src(nextBtn, LV_IMGBTN_STATE_RELEASED, NULL, &prev_next, NULL);
     lv_obj_set_size(nextBtn, prev_next.header.w, prev_next.header.h);
-    lv_obj_set_style_transform_pivot_x(nextBtn, lv_pct(50), 0);
-    lv_obj_set_style_transform_pivot_y(nextBtn, lv_pct(50), 0);
 }
 
 void MainControllerScreen::render(const UiNowPlayingSnapshot& s)
