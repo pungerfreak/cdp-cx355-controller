@@ -225,9 +225,10 @@ void MainControllerScreen::render(const UiNowPlayingSnapshot& s)
         }
     }
 
-    if ((!hasLast_ || s.transport != last_.transport) && transportImg_ != nullptr) {
-    const lv_image_dsc_t* icon = (s.transport == UiTransportState::Playing) ? &pause_icon : &play;
-        lv_img_set_src(transportImg_, icon);
+    if ((!hasLast_ || s.transport != last_.transport) && playBtn_ != nullptr) {
+        const lv_image_dsc_t* icon = (s.transport == UiTransportState::Playing) ? &pause_icon : &play;
+        lv_imgbtn_set_src(playBtn_, LV_IMGBTN_STATE_RELEASED, NULL, icon, NULL);
+        lv_imgbtn_set_src(playBtn_, LV_IMGBTN_STATE_PRESSED, NULL, icon, NULL);
     }
 
     last_ = s;

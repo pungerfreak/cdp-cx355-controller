@@ -31,7 +31,6 @@ class MainControllerScreen {
     lv_obj_t* nextBtn_ = nullptr;
     lv_obj_t* playBtn_ = nullptr;
     lv_obj_t* transportLabel_ = nullptr;
-    lv_obj_t* transportImg_ = nullptr;
     ActionBinding bindings_[5]{};
 
     UiActionCb cb_ = nullptr;
