@@ -28,6 +28,14 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
         lv_obj_add_event_cb(obj, MainControllerScreen::onButtonEvent_, LV_EVENT_RELEASED, binding);
     };
 
+    // Garish pressed state: splash red while touched, clear when released.
+    auto set_pressed_recolor = [](lv_obj_t* obj) {
+        const lv_color_t pressed_color = lv_color_hex(0xFF0000);
+        lv_obj_set_style_img_recolor(obj, pressed_color, LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_img_recolor_opa(obj, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_img_recolor_opa(obj, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    };
+
     const lv_coord_t screen_w = LV_HOR_RES;
     const lv_coord_t screen_h = LV_VER_RES;
 
@@ -63,6 +71,7 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_imgbtn_set_src(powerBtn, LV_IMGBTN_STATE_PRESSED, NULL, &power, NULL);
     lv_imgbtn_set_src(powerBtn, LV_IMGBTN_STATE_DISABLED, NULL, &power, NULL);
     lv_obj_set_size(powerBtn, power.header.w, power.header.h);
+    set_pressed_recolor(powerBtn);
     wire_button_events(powerBtn, &bindings_[3]);
     topRowPower_ = powerBtn;
 
@@ -121,6 +130,9 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_t* discBtn = lv_imgbtn_create(discTrackRow_);
     lv_imgbtn_set_src(discBtn, LV_IMGBTN_STATE_RELEASED, NULL, &disc, NULL);
     lv_obj_set_size(discBtn, disc.header.w, disc.header.h);
+    set_pressed_recolor(discBtn);
+    wire_button_events(discBtn, &bindings_[4]);
+    topRowDisc_ = discBtn;
 
     // Disc label
     topRowDiscLabel_ = lv_label_create(discTrackRow_);
@@ -133,11 +145,12 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_t* trackIcon = lv_img_create(discTrackRow_);
     lv_img_set_src(trackIcon, &track);
     lv_obj_set_size(trackIcon, track.header.w, track.header.h);
+    topRowTrack_ = trackIcon;
 
     // Track label
     topRowTrackLabel_ = lv_label_create(discTrackRow_);
     lv_label_set_text(topRowTrackLabel_, "3");
-    lv_obj_add_style(topRowDiscLabel_, &style_font_bold, 0);
+    lv_obj_add_style(topRowTrackLabel_, &style_font_bold, 0);
     lv_obj_set_width(topRowTrackLabel_, 25);
     lv_obj_set_style_text_color(topRowTrackLabel_, color_txt, 0);
 
@@ -197,14 +210,23 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_set_style_transform_pivot_x(prevBtn, lv_pct(50), 0);
     lv_obj_set_style_transform_pivot_y(prevBtn, lv_pct(50), 0);
     lv_obj_set_style_transform_angle(prevBtn, 1800, 0);
+    set_pressed_recolor(prevBtn);
+    wire_button_events(prevBtn, &bindings_[0]);
+    prevBtn_ = prevBtn;
 
     lv_obj_t* playBtn = lv_imgbtn_create(controls);
     lv_imgbtn_set_src(playBtn, LV_IMGBTN_STATE_RELEASED, NULL, &play, NULL);
     lv_obj_set_size(playBtn, play.header.w, play.header.h);
+    set_pressed_recolor(playBtn);
+    wire_button_events(playBtn, &bindings_[1]);
+    playBtn_ = playBtn;
 
     lv_obj_t* nextBtn = lv_imgbtn_create(controls);
     lv_imgbtn_set_src(nextBtn, LV_IMGBTN_STATE_RELEASED, NULL, &prev_next, NULL);
     lv_obj_set_size(nextBtn, prev_next.header.w, prev_next.header.h);
+    set_pressed_recolor(nextBtn);
+    wire_button_events(nextBtn, &bindings_[2]);
+    nextBtn_ = nextBtn;
 }
 
 void MainControllerScreen::render(const UiNowPlayingSnapshot& s)
@@ -237,9 +259,10 @@ void MainControllerScreen::render(const UiNowPlayingSnapshot& s)
         }
     }
 
-    if ((!hasLast_ || s.transport != last_.transport) && transportImg_ != nullptr) {
-    const lv_image_dsc_t* icon = (s.transport == UiTransportState::Playing) ? &pause_icon : &play;
-        lv_img_set_src(transportImg_, icon);
+    if ((!hasLast_ || s.transport != last_.transport) && playBtn_ != nullptr) {
+        const lv_image_dsc_t* icon = (s.transport == UiTransportState::Playing) ? &pause_icon : &play;
+        lv_imgbtn_set_src(playBtn_, LV_IMGBTN_STATE_RELEASED, NULL, icon, NULL);
+        lv_imgbtn_set_src(playBtn_, LV_IMGBTN_STATE_PRESSED, NULL, icon, NULL);
     }
 
     last_ = s;

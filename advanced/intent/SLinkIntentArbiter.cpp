@@ -23,6 +23,8 @@ const SLinkIntentArbiter::Policy& SLinkIntentArbiter::policyFor(
       {kPriorityMedium, kThrottleTransportMs, kExpireTransportMs},  // Play
       {kPriorityHigh, kThrottleTransportMs, kExpireTransportMs},    // Stop
       {kPriorityMedium, kThrottleTransportMs, kExpireTransportMs},  // Pause
+      {kPriorityMedium, kThrottleTransportMs, kExpireTransportMs},  // Next
+      {kPriorityMedium, kThrottleTransportMs, kExpireTransportMs},  // Prev
       {kPriorityHigh, kThrottlePowerMs, kExpirePowerMs},            // PowerOn
       {kPriorityHigh, kThrottlePowerMs, kExpirePowerMs},            // PowerOff
       {kPriorityLow, kThrottleSelectMs, kExpireChangeDiscMs},       // ChangeDisc

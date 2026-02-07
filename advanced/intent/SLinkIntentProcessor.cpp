@@ -53,6 +53,12 @@ bool SLinkIntentProcessor::dispatch(const SLinkCommandIntent& intent) {
     case SLinkIntentType::Pause:
       cmd.type = SLinkUnitCommandType::Pause;
       break;
+    case SLinkIntentType::Next:
+      cmd.type = SLinkUnitCommandType::Next;
+      break;
+    case SLinkIntentType::Prev:
+      cmd.type = SLinkUnitCommandType::Prev;
+      break;
     case SLinkIntentType::PowerOn:
       cmd.type = SLinkUnitCommandType::PowerOn;
       break;

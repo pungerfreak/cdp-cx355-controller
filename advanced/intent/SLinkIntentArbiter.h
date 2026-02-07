@@ -12,6 +12,8 @@ public:
 
 private:
   static constexpr uint8_t kIntentTypeCount = 10;
+  static constexpr uint8_t kIntentTypeCount = 12;
+
 
   struct Policy {
     uint8_t priority;

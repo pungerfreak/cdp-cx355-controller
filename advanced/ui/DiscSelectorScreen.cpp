@@ -5,6 +5,8 @@
 #include "../images/backspace.c"
 #include "../fonts/open_sans_22.c"
 
+extern const lv_font_t open_sans_18_bold;
+
 void DiscSelectorScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
 {
     cb_ = cb;
@@ -149,7 +151,7 @@ void DiscSelectorScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_t* okLabel = lv_label_create(okBtn);
     lv_label_set_text(okLabel, "OK");
     lv_obj_set_style_text_color(okLabel, color_accent, 0);
-    lv_obj_set_style_text_font(okLabel, &open_sans_22, 0);
+    lv_obj_set_style_text_font(okLabel, &open_sans_18_bold, 0);
     lv_obj_center(okLabel);
 }
 

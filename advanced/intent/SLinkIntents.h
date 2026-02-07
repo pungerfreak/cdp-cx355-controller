@@ -5,6 +5,8 @@ enum class SLinkIntentType : uint8_t {
   Play,
   Stop,
   Pause,
+  Next,
+  Prev,
   PowerOn,
   PowerOff,
   ChangeDisc,
