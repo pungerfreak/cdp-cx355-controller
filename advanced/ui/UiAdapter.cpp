@@ -208,28 +208,14 @@ void UiAdapter::onUiAction_(UiAction action)
         }
         case UiAction::NextTrack:
         case UiAction::PrevTrack: {
-            if (!hasUi_ || ui_.track == 0) {
-                Serial.println(action == UiAction::NextTrack
-                                   ? "intent: nextTrack ignored (track unknown)"
-                                   : "intent: prevTrack ignored (track unknown)");
-                break;
-            }
-            int delta = (action == UiAction::NextTrack) ? 1 : -1;
-            int next = static_cast<int>(ui_.track) + delta;
-            if (next < 1 || next > 255) {
-                Serial.println(action == UiAction::NextTrack
-                                   ? "intent: nextTrack ignored (out of range)"
-                                   : "intent: prevTrack ignored (out of range)");
-                break;
-            }
-            bool ok = intents.changeTrack(static_cast<uint8_t>(next));
-            if (action == UiAction::NextTrack) {
-                Serial.println(ok ? "intent: nextTrack -> changeTrack"
-                                  : "intent: nextTrack rejected");
-            } else {
-                Serial.println(ok ? "intent: prevTrack -> changeTrack"
-                                  : "intent: prevTrack rejected");
-            }
+            bool ok = (action == UiAction::NextTrack) ? intents.nextTrack()
+                                                      : intents.prevTrack();
+            Serial.println(ok ? (action == UiAction::NextTrack
+                                     ? "intent: next"
+                                     : "intent: prev")
+                              : (action == UiAction::NextTrack
+                                     ? "intent: next (rejected)"
+                                     : "intent: prev (rejected)"));
             break;
         }
         case UiAction::Power: {

@@ -27,9 +27,9 @@ class MainControllerScreen {
     lv_obj_t* midLine1_ = nullptr;
     lv_obj_t* midLine2_ = nullptr;
     lv_obj_t* midLine3_ = nullptr;
-    lv_obj_t* prevBtn = nullptr;
-    lv_obj_t* nextBtn = nullptr;
-    lv_obj_t* playBtn = nullptr;
+    lv_obj_t* prevBtn_ = nullptr;
+    lv_obj_t* nextBtn_ = nullptr;
+    lv_obj_t* playBtn_ = nullptr;
     lv_obj_t* transportLabel_ = nullptr;
     lv_obj_t* transportImg_ = nullptr;
     ActionBinding bindings_[5]{};

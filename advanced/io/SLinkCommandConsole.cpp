@@ -9,7 +9,7 @@ SLinkCommandConsole::SLinkCommandConsole(Stream& io,
     : _io(io), _input(input), _rawTx(rawTx), _printTx(printTx) {}
 
 void SLinkCommandConsole::printHelp() {
-  _io.println("commands: PLAY, STOP, PAUSE, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, SEND <HEX>, GET_CURRENT_DISC, GET_STATUS");
+  _io.println("commands: PLAY, STOP, PAUSE, NEXT, PREV, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, SEND <HEX>, GET_CURRENT_DISC, GET_STATUS");
 }
 
 bool SLinkCommandConsole::isWhitespace(char c) {
@@ -112,6 +112,16 @@ bool SLinkCommandConsole::dispatchSimple(const char* cmd) {
   if (strcmp(cmd, "PAUSE") == 0) {
     printTx("PAUSE");
     if (!_input.pause()) _io.println("unsupported: PAUSE");
+    return true;
+  }
+  if (strcmp(cmd, "NEXT") == 0) {
+    printTx("NEXT");
+    if (!_input.nextTrack()) _io.println("unsupported: NEXT");
+    return true;
+  }
+  if (strcmp(cmd, "PREV") == 0) {
+    printTx("PREV");
+    if (!_input.prevTrack()) _io.println("unsupported: PREV");
     return true;
   }
   if (strcmp(cmd, "POWER_ON") == 0) {

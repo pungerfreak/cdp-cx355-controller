@@ -97,6 +97,8 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_imgbtn_set_src(discBtn, LV_IMGBTN_STATE_RELEASED, NULL, &disc, NULL);
     lv_obj_set_size(discBtn, disc.header.w, disc.header.h);
     set_pressed_recolor(discBtn);
+    wire_button_events(discBtn, &bindings_[4]);
+    topRowDisc_ = discBtn;
 
     // Disc label
     topRowDiscLabel_ = lv_label_create(discTrackRow_);
@@ -174,16 +176,22 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_set_style_transform_pivot_y(prevBtn, lv_pct(50), 0);
     lv_obj_set_style_transform_angle(prevBtn, 1800, 0);
     set_pressed_recolor(prevBtn);
+    wire_button_events(prevBtn, &bindings_[0]);
+    prevBtn_ = prevBtn;
 
     lv_obj_t* playBtn = lv_imgbtn_create(controls);
     lv_imgbtn_set_src(playBtn, LV_IMGBTN_STATE_RELEASED, NULL, &play, NULL);
     lv_obj_set_size(playBtn, play.header.w, play.header.h);
     set_pressed_recolor(playBtn);
+    wire_button_events(playBtn, &bindings_[1]);
+    playBtn_ = playBtn;
 
     lv_obj_t* nextBtn = lv_imgbtn_create(controls);
     lv_imgbtn_set_src(nextBtn, LV_IMGBTN_STATE_RELEASED, NULL, &prev_next, NULL);
     lv_obj_set_size(nextBtn, prev_next.header.w, prev_next.header.h);
     set_pressed_recolor(nextBtn);
+    wire_button_events(nextBtn, &bindings_[2]);
+    nextBtn_ = nextBtn;
 }
 
 void MainControllerScreen::render(const UiNowPlayingSnapshot& s)
