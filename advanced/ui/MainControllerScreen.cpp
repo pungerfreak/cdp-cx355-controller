@@ -27,6 +27,14 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
         lv_obj_add_event_cb(obj, MainControllerScreen::onButtonEvent_, LV_EVENT_RELEASED, binding);
     };
 
+    // Garish pressed state: splash red while touched, clear when released.
+    auto set_pressed_recolor = [](lv_obj_t* obj) {
+        const lv_color_t pressed_color = lv_color_hex(0xFF0000);
+        lv_obj_set_style_img_recolor(obj, pressed_color, LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_img_recolor_opa(obj, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_img_recolor_opa(obj, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+    };
+
     const lv_coord_t screen_w = LV_HOR_RES;
     const lv_coord_t screen_h = LV_VER_RES;
 
@@ -62,6 +70,7 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_imgbtn_set_src(powerBtn, LV_IMGBTN_STATE_PRESSED, NULL, &power, NULL);
     lv_imgbtn_set_src(powerBtn, LV_IMGBTN_STATE_DISABLED, NULL, &power, NULL);
     lv_obj_set_size(powerBtn, power.header.w, power.header.h);
+    set_pressed_recolor(powerBtn);
     wire_button_events(powerBtn, &bindings_[3]);
     topRowPower_ = powerBtn;
 
@@ -87,6 +96,7 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_t* discBtn = lv_imgbtn_create(discTrackRow_);
     lv_imgbtn_set_src(discBtn, LV_IMGBTN_STATE_RELEASED, NULL, &disc, NULL);
     lv_obj_set_size(discBtn, disc.header.w, disc.header.h);
+    set_pressed_recolor(discBtn);
 
     // Disc label
     topRowDiscLabel_ = lv_label_create(discTrackRow_);
@@ -163,14 +173,17 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_set_style_transform_pivot_x(prevBtn, lv_pct(50), 0);
     lv_obj_set_style_transform_pivot_y(prevBtn, lv_pct(50), 0);
     lv_obj_set_style_transform_angle(prevBtn, 1800, 0);
+    set_pressed_recolor(prevBtn);
 
     lv_obj_t* playBtn = lv_imgbtn_create(controls);
     lv_imgbtn_set_src(playBtn, LV_IMGBTN_STATE_RELEASED, NULL, &play, NULL);
     lv_obj_set_size(playBtn, play.header.w, play.header.h);
+    set_pressed_recolor(playBtn);
 
     lv_obj_t* nextBtn = lv_imgbtn_create(controls);
     lv_imgbtn_set_src(nextBtn, LV_IMGBTN_STATE_RELEASED, NULL, &prev_next, NULL);
     lv_obj_set_size(nextBtn, prev_next.header.w, prev_next.header.h);
+    set_pressed_recolor(nextBtn);
 }
 
 void MainControllerScreen::render(const UiNowPlayingSnapshot& s)
