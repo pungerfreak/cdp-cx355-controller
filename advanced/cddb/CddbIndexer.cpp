@@ -20,6 +20,8 @@ void CddbIndexer::start() {
   currentSaved_ = false;
   lastTracksSeen_ = 0;
   unitsDone_ = 0;
+  missingCount_ = 0;
+  memset(missing_, 0, sizeof(missing_));
   unitsTotal_ = static_cast<uint32_t>(maxDiscs_) * kPlaceholderTracksPerDisc;
   memset(trackCounts_, 0, sizeof(trackCounts_));
   discReady_ = false;
@@ -77,6 +79,10 @@ void CddbIndexer::tick(uint32_t nowMs) {
         lookup_.clearTrackCountHint();
         attempt_ = 0;
         discReady_ = false;
+        if (missing_[disc_]) {
+          ++disc_;
+          continue;
+        }
         if (storage_.has(disc_)) {
           uint8_t storedCount = 0;
           if (storage_.trackCount(disc_, storedCount) && storedCount > 0) {
@@ -98,6 +104,11 @@ void CddbIndexer::tick(uint32_t nowMs) {
       }
       if (intents_.changeDisc(disc_)) {
         advanceState_(State::WaitDiscReady);
+      } else {
+        // If the intent is rejected, treat slot as missing and continue.
+        markMissing_(disc_);
+        ++disc_;
+        advanceState_(State::ChangeDisc);
       }
       break;
     }
@@ -120,6 +131,12 @@ void CddbIndexer::tick(uint32_t nowMs) {
             advanceState_(State::Failed);
           }
         }
+      } else if (discInfo.present && discInfo.valid && discInfo.disc > disc_) {
+        // Changer skipped some empty slots: mark the gap as missing.
+        markMissingRange_(disc_, discInfo.disc);
+        disc_ = discInfo.disc;
+        // Give the new target a fresh try immediately.
+        advanceState_(State::WaitDiscReady);
       }
       break;
     }
@@ -138,11 +155,12 @@ CddbIndexStatus CddbIndexer::status() const {
   s.complete = (state_ == State::Done);
   s.currentDisc = disc_;
   s.currentTrack = lookup_.requestedTrack();
-  s.totalDiscs = maxDiscs_;
+  s.totalDiscs = maxDiscs_ - missingCount_;
   uint32_t doneUnits = unitsDone_;
   uint32_t totalUnits = unitsDone_;
   uint8_t seen = (state_ == State::Collecting || state_ == State::Querying) ? lookup_.tracksSeen() : 0;
   for (uint16_t d = disc_; d <= maxDiscs_; ++d) {
+    if (missing_[d]) continue;
     uint8_t known = trackCounts_[d];
     uint8_t hint = (state_ == State::Collecting && d == disc_) ? lookup_.trackCountHint() : 0;
     if (known == 0 && hint > 0) {
@@ -267,6 +285,7 @@ void CddbIndexer::handleQuerying_() {
   // Recompute unitsTotal_ in case later discs will be larger than placeholder.
   unitsTotal_ = 0;
   for (uint16_t d = 1; d <= maxDiscs_; ++d) {
+    if (missing_[d]) continue;
     uint8_t c = trackCounts_[d];
     unitsTotal_ += (c > 0) ? c : kPlaceholderTracksPerDisc;
   }
@@ -284,6 +303,7 @@ void CddbIndexer::persist_(const CddbMetadata& meta) {
 
 void CddbIndexer::setTrackCount_(uint16_t disc, uint8_t tracks) {
   if (disc == 0 || disc > 300) return;
+  if (missing_[disc]) return;
   uint8_t prev = trackCounts_[disc];
   uint8_t prevAssumed = (prev > 0) ? prev : kPlaceholderTracksPerDisc;
   uint8_t newCount = (tracks > 0) ? tracks : kPlaceholderTracksPerDisc;
@@ -291,4 +311,21 @@ void CddbIndexer::setTrackCount_(uint16_t disc, uint8_t tracks) {
   // Update total to reflect the new real count.
   if (unitsTotal_ >= prevAssumed) unitsTotal_ -= prevAssumed;
   unitsTotal_ += newCount;
+}
+
+void CddbIndexer::markMissing_(uint16_t disc) {
+  if (disc == 0 || disc > 300) return;
+  if (missing_[disc]) return;
+  missing_[disc] = true;
+  ++missingCount_;
+  uint8_t assumed = trackCounts_[disc] ? trackCounts_[disc] : kPlaceholderTracksPerDisc;
+  if (unitsTotal_ >= assumed) unitsTotal_ -= assumed;
+}
+
+void CddbIndexer::markMissingRange_(uint16_t fromDisc, uint16_t toDiscExclusive) {
+  if (fromDisc == 0) fromDisc = 1;
+  if (toDiscExclusive > 301) toDiscExclusive = 301;
+  for (uint16_t d = fromDisc; d < toDiscExclusive; ++d) {
+    markMissing_(d);
+  }
 }

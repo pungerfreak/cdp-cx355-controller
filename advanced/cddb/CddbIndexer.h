@@ -49,6 +49,8 @@ private:
   void handleQuerying_();
   void persist_(const CddbMetadata& meta);
   void setTrackCount_(uint16_t disc, uint8_t tracks);
+  void markMissing_(uint16_t disc);
+  void markMissingRange_(uint16_t fromDisc, uint16_t toDiscExclusive);
 
   SLinkSystem& system_;
   SLinkCommandIntentSource& intents_;
@@ -67,6 +69,8 @@ private:
   uint32_t unitsTotal_ = 0;
   uint32_t unitsDone_ = 0;
   bool discReady_ = false;
+  bool missing_[301] = {};
+  uint16_t missingCount_ = 0;
 };
 
 #endif  // CDDB_INDEXER_H_
