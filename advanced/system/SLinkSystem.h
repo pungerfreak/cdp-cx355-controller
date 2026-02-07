@@ -2,7 +2,6 @@
 #ifndef SLINK_SYSTEM_H_
 #define SLINK_SYSTEM_H_
 #include <Arduino.h>
-#include "command/SLinkCommandInput.h"
 #include "command/SLinkUnitCommandSender.h"
 #include "debug/SLinkDebugPrinter.h"
 #include "transport/SLinkBusState.h"
@@ -28,8 +27,6 @@ public:
 
   void begin();
   void poll();
-  bool addCommandInput(SLinkCommandInput& input);
-  bool addEventOutput(SLinkUnitEventHandler& output);
   bool addUnitObserver(SLinkUnitEventObserver& observer);
   bool removeUnitObserver(SLinkUnitEventObserver& observer);
   void getUnitStateSnapshot(SLinkDiscInfo& disc, SLinkTrackInfo& track) const;
@@ -39,8 +36,6 @@ public:
   void clearIntents();
 
 private:
-  static constexpr uint8_t kMaxCommandInputs = 4;
-  static constexpr uint8_t kMaxEventOutputs = 4;
   static constexpr uint8_t kTxPin = 2;
   static constexpr uint8_t kRxPin = 21;
   Stream& _serial;
@@ -56,10 +51,6 @@ private:
   SLinkIntentProcessor _intentProcessor;
   SLinkTranslator _translator;
   SLinkDebugPrinter _debugPrinter;
-  SLinkCommandInput* _commandInputs[kMaxCommandInputs] = {};
-  uint8_t _commandInputCount = 0;
-  SLinkUnitEventHandler* _eventOutputs[kMaxEventOutputs] = {};
-  uint8_t _eventOutputCount = 0;
   SLinkUnitStateStore _unitStateStore;
   SLinkUnitEventBus _unitEventBus;
   SLinkUnitEventPublisher _unitEventPublisher;

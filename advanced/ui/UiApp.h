@@ -1,51 +1,9 @@
 #pragma once
 
-#include <lvgl.h>
-#include <stddef.h>
-
-enum class UiAction : uint8_t {
-    PrevTrack = 0,
-    NextTrack,
-    Play,
-    Pause,
-    Stop,
-    Power,
-    OpenDiscKeypad,
-    KeypadDigit0,
-    KeypadDigit1,
-    KeypadDigit2,
-    KeypadDigit3,
-    KeypadDigit4,
-    KeypadDigit5,
-    KeypadDigit6,
-    KeypadDigit7,
-    KeypadDigit8,
-    KeypadDigit9,
-    KeypadBackspace,
-    KeypadClear,
-    KeypadGo,
-    KeypadCancel,
-    StartCddbIndex
-};
-
-using UiActionCb = void(*)(UiAction action, void* user);
-
-enum class UiTransportState : uint8_t {
-    Unknown = 0,
-    Stopped,
-    Playing,
-    Paused
-};
-
-struct UiNowPlayingSnapshot {
-    uint16_t disc;
-    uint16_t track;
-    uint32_t elapsed_sec;
-    const char* title;
-    const char* artist;
-    const char* album;
-    UiTransportState transport;
-};
+#include "CddbScreen.h"
+#include "DiscSelectorScreen.h"
+#include "MainControllerScreen.h"
+#include "UiTypes.h"
 
 class UiApp {
   public:
@@ -60,46 +18,28 @@ class UiApp {
     void setActionCallback(UiActionCb cb, void* user);
     void setKeypadError(bool on);
     void showNowPlaying();
-    lv_obj_t* root() const { return nowPlayingRoot_; }
+    lv_obj_t* root() const { return root_; }
 
   private:
-    struct ActionBinding {
-        UiAction action;
-        UiApp* app;
+    enum class ActiveScreen : uint8_t {
+        Main = 0,
+        DiscSelector,
+        Cddb
     };
 
-    lv_obj_t* nowPlayingRoot_ = nullptr;
-    lv_obj_t* keypadRoot_ = nullptr;
+    static void onScreenActionThunk_(UiAction action, void* user);
+    void handleScreenAction_(UiAction action);
+    void switchToMain_();
+    void switchToDiscSelector_();
+    void switchToCddb_();
 
-    // Store LVGL object pointers for labels/buttons needed in milestone B
-    lv_obj_t* labelHeader_ = nullptr;   // e.g., "Disc 12 | Track 3"
-    lv_obj_t* labelTime_   = nullptr;   // e.g., "01:23"
-    lv_obj_t* labelMeta_   = nullptr;   // e.g., "Artist - Album\nTitle"
-    lv_obj_t* labelState_  = nullptr;   // e.g., "PLAYING"/"PAUSED"
-    lv_obj_t* transportLabel_ = nullptr;
-    lv_obj_t* keypadEntry_ = nullptr;
-    lv_obj_t* keypadError_ = nullptr;
-
-    // Keep minimal UI-local state if needed (optional)
-    UiNowPlayingSnapshot last_{};
-    bool hasLast_ = false;
-    bool transportLongPressHandled_ = false;
+    lv_obj_t* root_ = nullptr;
 
     UiActionCb cb_ = nullptr;
     void* user_ = nullptr;
-    static constexpr size_t kActionCount_ = 22;
-    ActionBinding bindings_[kActionCount_]{};
-    char keypadBuf_[4]{};
-    uint8_t keypadLen_ = 0;
+    ActiveScreen active_ = ActiveScreen::Main;
 
-    // Helpers
-    static void onButtonEvent_(lv_event_t* e);
-    void emitAction_(UiAction action);
-    static void formatTime_(char* out, size_t outLen, uint32_t elapsed_sec);
-    void showNowPlaying_();
-    void showKeypad_();
-    void updateKeypadDisplay_();
-    void handleKeypadInput_(UiAction action);
-    void handleTransportButtonEvent_(lv_event_code_t code);
-    UiAction transportPressAction_() const;
+    MainControllerScreen main_;
+    DiscSelectorScreen disc_;
+    CddbScreen cddb_;
 };

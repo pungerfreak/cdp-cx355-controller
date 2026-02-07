@@ -22,12 +22,6 @@ void SLinkFrameCallbacks::onRxFrame(const uint8_t* data, uint16_t len,
   static_cast<SLinkFrameCallbacks*>(context)->handleRx(data, len, error);
 }
 
-bool SLinkFrameCallbacks::addOutputHandler(SLinkUnitEventHandler& outputHandler) {
-  if (_outputHandlerCount >= kMaxOutputs) return false;
-  _outputHandlers[_outputHandlerCount++] = &outputHandler;
-  return true;
-}
-
 void SLinkFrameCallbacks::handleTx(const uint8_t* data, uint16_t len) {
   if (!_debugToSerial) return;
   if (!data || len == 0) return;
@@ -51,11 +45,6 @@ void SLinkFrameCallbacks::handleRx(const uint8_t* data, uint16_t len, bool error
     if (_debugToSerial) {
       _io.print("rx ");
       SLinkDispatcher::dispatch(_rxMessage, _debugPrinter, &debugInfo);
-    }
-    for (uint8_t i = 0; i < _outputHandlerCount; ++i) {
-      if (_outputHandlers[i] != nullptr) {
-        SLinkDispatcher::dispatch(_rxMessage, *_outputHandlers[i], &debugInfo);
-      }
     }
   }
 }

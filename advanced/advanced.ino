@@ -9,6 +9,7 @@
 
 #include "io/SLinkCommandConsole.h"
 #include "io/SLinkPrettyPrinter.h"
+#include "io/ConsoleAdapter.h"
 #include "system/SLinkSystem.h"
 #include "ui/UiApp.h"
 #include "ui/UiAdapter.h"
@@ -37,6 +38,7 @@ static SLinkCommandConsole slinkConsole(Serial,
                                         &slinkSystem.tx(),
                                         &cddbStorage);
 static SLinkPrettyPrinter slinkPrinter(Serial);
+static ConsoleAdapter consoleAdapter(slinkSystem, slinkConsole, slinkPrinter);
 static UiApp app;
 static UiAdapter adapter(slinkSystem, app);
 static LoadingScreen loadingScreen;
@@ -86,10 +88,12 @@ void setup() {
   cddbLookup.start();
   app.init();
   adapter.setIndexer(&cddbIndexer, &loadingScreen);
+  consoleAdapter.start();
   adapter.start();
 }
 
 void loop() {
+  consoleAdapter.poll();
   slinkSystem.poll();
   uint32_t now = millis();
   if (cancelRequested) {
