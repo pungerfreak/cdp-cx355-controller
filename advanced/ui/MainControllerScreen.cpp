@@ -1,47 +1,19 @@
 #include "MainControllerScreen.h"
 
 #include <stdio.h>
-#include <string.h>
+#include "../fonts/open_sans_18_bold.c"
+#include "../fonts/open_sans_18.c"
+#include "../images/power.c"
+#include "../images/disc.c"
+#include "../images/track.c"
+#include "../images/play.c"
+#include "../images/pause.c"
+#include "../images/prev-next.c"
 
 void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
 {
     cb_ = cb;
     user_ = user;
-
-    root_ = lv_obj_create(parent);
-    setup_root_obj(root_);
-
-    const lv_coord_t screen_w = LV_HOR_RES;
-    const lv_coord_t header_w = 140;
-    const lv_coord_t time_w = 170;
-    const lv_coord_t meta_w = 160;
-    const lv_coord_t state_w = 200;
-    const lv_coord_t controls_w = 140;
-
-    labelHeader_ = lv_label_create(root_);
-    lv_obj_set_size(labelHeader_, header_w, 20);
-    lv_obj_set_pos(labelHeader_, (screen_w - header_w) / 2, 24);
-    lv_obj_set_style_text_align(labelHeader_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_text(labelHeader_, "Disc - | Track -");
-
-    labelTime_ = lv_label_create(root_);
-    lv_obj_set_size(labelTime_, time_w, 18);
-    lv_obj_set_pos(labelTime_, (screen_w - time_w) / 2, 46);
-    lv_obj_set_style_text_align(labelTime_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_text(labelTime_, "00:00");
-
-    labelMeta_ = lv_label_create(root_);
-    lv_obj_set_size(labelMeta_, meta_w, 56);
-    lv_obj_set_pos(labelMeta_, 20, 66);
-    lv_obj_set_style_text_align(labelMeta_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_long_mode(labelMeta_, LV_LABEL_LONG_DOT);
-    lv_label_set_text(labelMeta_, "- -\n-");
-
-    labelState_ = lv_label_create(root_);
-    lv_obj_set_size(labelState_, state_w, 18);
-    lv_obj_set_pos(labelState_, (screen_w - state_w) / 2, 124);
-    lv_obj_set_style_text_align(labelState_, LV_TEXT_ALIGN_CENTER, 0);
-    lv_label_set_text(labelState_, "PAUSED");
 
     bindings_[0] = {UiAction::PrevTrack, this};
     bindings_[1] = {UiAction::Play, this};
@@ -55,136 +27,173 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
         lv_obj_add_event_cb(obj, MainControllerScreen::onButtonEvent_, LV_EVENT_RELEASED, binding);
     };
 
-    lv_obj_t* controls = lv_obj_create(root_);
-    lv_obj_set_size(controls, controls_w, 40);
-    lv_obj_set_pos(controls, (screen_w - controls_w) / 2, 146);
-    lv_obj_set_layout(controls, LV_LAYOUT_NONE);
-    lv_obj_set_style_bg_opa(controls, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_border_opa(controls, LV_OPA_TRANSP, 0);
-    lv_obj_set_style_pad_all(controls, 0, 0);
-    lv_obj_clear_flag(controls, LV_OBJ_FLAG_SCROLLABLE);
+    const lv_coord_t screen_w = LV_HOR_RES;
+    const lv_coord_t screen_h = LV_VER_RES;
 
-    const lv_coord_t btn_w = 44;
-    const lv_coord_t btn_h = 40;
-    const lv_coord_t btn_gap = 4;
-    const lv_coord_t btn_y = 0;
+    const lv_color_t color_bg = lv_color_hex(0x000000);
+    const lv_color_t color_accent = lv_color_hex(0xDDCC0B);
+    const lv_color_t color_txt = lv_color_hex(0xFFFFFF);
 
-    auto add_button = [&](const char* text, ActionBinding* binding, int index) -> lv_obj_t* {
-        lv_obj_t* btn = lv_btn_create(controls);
-        lv_obj_set_size(btn, btn_w, btn_h);
-        lv_obj_set_pos(btn, index * (btn_w + btn_gap), btn_y);
-        wire_button_events(btn, binding);
-        lv_obj_t* label = lv_label_create(btn);
-        lv_label_set_text(label, text);
-        lv_obj_center(label);
-        return label;
+    root_ = lv_obj_create(parent);
+    setup_root_obj(root_);
+    lv_obj_set_size(root_, screen_w, screen_h);
+    lv_obj_set_layout(root_, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(root_, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(root_,
+        LV_FLEX_ALIGN_START,   // main axis (row = horizontal)
+        LV_FLEX_ALIGN_CENTER,   // cross axis (vertical)
+        LV_FLEX_ALIGN_CENTER    // track alignment (multi-row)
+    );
+
+    lv_obj_set_style_bg_color(root_, color_bg, 0);
+    lv_obj_set_style_bg_opa(root_, LV_OPA_COVER, 0);
+
+    // Top row: Power button as icon
+    lv_obj_t* powerBtn = lv_imgbtn_create(root_);
+    lv_imgbtn_set_src(powerBtn, LV_IMGBTN_STATE_RELEASED, NULL, &power, NULL);
+    lv_imgbtn_set_src(powerBtn, LV_IMGBTN_STATE_PRESSED, NULL, &power, NULL);
+    lv_imgbtn_set_src(powerBtn, LV_IMGBTN_STATE_DISABLED, NULL, &power, NULL);
+    lv_obj_set_size(powerBtn, power.header.w, power.header.h);
+    wire_button_events(powerBtn, &bindings_[3]);
+    topRowPower_ = powerBtn;
+
+    // Top row: Disc / Track numbers
+    const lv_coord_t disc_track_row_height = 28;
+
+    // Disc & Track row container
+    discTrackRow_ = lv_obj_create(root_);
+    lv_obj_set_layout(discTrackRow_, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_align(discTrackRow_,
+        LV_FLEX_ALIGN_CENTER,   // main axis (row = horizontal)
+        LV_FLEX_ALIGN_CENTER,   // cross axis (vertical)
+        LV_FLEX_ALIGN_CENTER    // track alignment (multi-row)
+    );
+    lv_obj_set_style_pad_column(discTrackRow_, 10, 0);
+    lv_obj_set_style_border_width(discTrackRow_, 0, 0);
+    lv_obj_set_style_bg_opa(discTrackRow_, LV_OPA_TRANSP, 0);
+    lv_obj_set_size(discTrackRow_, LV_PCT(100), LV_SIZE_CONTENT);
+
+    // Disc icon
+    lv_obj_t* discBtn = lv_imgbtn_create(discTrackRow_);
+    lv_imgbtn_set_src(discBtn, LV_IMGBTN_STATE_RELEASED, NULL, &disc, NULL);
+    lv_obj_set_size(discBtn, disc.header.w, disc.header.h);
+
+    // Disc label
+    topRowDiscLabel_ = lv_label_create(discTrackRow_);
+    lv_label_set_text(topRowDiscLabel_, "3");
+    lv_obj_set_style_text_color(topRowDiscLabel_, color_accent, 0);
+    lv_obj_set_style_text_font(topRowDiscLabel_, &open_sans_18_bold, 0);
+    lv_obj_set_style_pad_right(topRowDiscLabel_, 10, 0);
+    lv_obj_set_style_text_color(topRowDiscLabel_, color_txt, 0);
+
+    // Track icon
+    lv_obj_t* trackIcon = lv_img_create(discTrackRow_);
+    lv_img_set_src(trackIcon, &track);
+    lv_obj_set_size(trackIcon, track.header.w, track.header.h);
+
+    // Track label
+    topRowTrackLabel_ = lv_label_create(discTrackRow_);
+    lv_label_set_text(topRowTrackLabel_, "3");
+    lv_obj_set_style_text_color(topRowTrackLabel_, color_accent, 0);
+    lv_obj_set_style_text_font(topRowTrackLabel_, &open_sans_18_bold, 0);
+    lv_obj_set_width(topRowTrackLabel_, 25);
+    lv_obj_set_style_text_color(topRowTrackLabel_, color_txt, 0);
+
+    // Middle: three-line segment
+    const lv_coord_t line_h = 20;
+    const lv_coord_t line_gap = 0;
+    lv_obj_t* midContainer = lv_obj_create(root_);
+    lv_obj_set_style_bg_opa(midContainer, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(midContainer, 0, 0);
+    lv_obj_set_size(midContainer, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_clear_flag(midContainer, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_layout(midContainer, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(midContainer, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(midContainer,
+        LV_FLEX_ALIGN_START,   // main axis (row = horizontal)
+        LV_FLEX_ALIGN_CENTER,   // cross axis (vertical)
+        LV_FLEX_ALIGN_CENTER    // track alignment (multi-row)
+    );
+
+
+    auto create_mid_label = [&](const char* text, lv_coord_t y, bool bold) -> lv_obj_t* {
+        lv_obj_t* lbl = lv_label_create(midContainer);
+        lv_obj_set_style_text_align(lbl, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_set_style_text_color(lbl, color_accent, 0);
+        lv_obj_set_style_text_font(lbl, bold ? &open_sans_18_bold : &open_sans_18, 0);
+        lv_label_set_text(lbl, text);
+        return lbl;
     };
 
-    add_button("Prev", &bindings_[0], 0);
-    transportLabel_ = add_button("Play", &bindings_[1], 1);
-    add_button("Next", &bindings_[2], 2);
+    midLine1_ = create_mid_label("ARTIST", 0, true);
+    midLine2_ = create_mid_label("ALBUM", line_h + line_gap, false);
+    midLine3_ = create_mid_label("TITLE", (line_h + line_gap) * 2, false);
 
-    lv_obj_t* powerBtn = lv_btn_create(root_);
-    lv_obj_set_size(powerBtn, 42, 32);
-    lv_obj_set_pos(powerBtn, 188, 80);
-    wire_button_events(powerBtn, &bindings_[3]);
-    lv_obj_t* powerLabel = lv_label_create(powerBtn);
-    lv_label_set_text(powerLabel, "Power");
-    lv_obj_center(powerLabel);
+    // // Bottom: transport buttons
+    lv_obj_t* controls = lv_obj_create(root_);
+    lv_obj_set_layout(controls, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_align(controls,
+        LV_FLEX_ALIGN_CENTER,   // main axis (row = horizontal)
+        LV_FLEX_ALIGN_CENTER,   // cross axis (vertical)
+        LV_FLEX_ALIGN_CENTER    // track alignment (multi-row)
+    );
+    lv_obj_set_style_bg_opa(controls, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_border_width(controls, 0, 0);
+    lv_obj_set_size(controls, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_clear_flag(controls, LV_OBJ_FLAG_SCROLLABLE);
 
-    lv_obj_t* discBtn = lv_btn_create(root_);
-    lv_obj_set_size(discBtn, 56, 32);
-    lv_obj_set_pos(discBtn, (screen_w - 56) / 2, 188);
-    wire_button_events(discBtn, &bindings_[4]);
-    lv_obj_t* discLabel = lv_label_create(discBtn);
-    lv_label_set_text(discLabel, "Disc");
-    lv_obj_center(discLabel);
+    lv_obj_t* prevBtn = lv_imgbtn_create(controls);
+    lv_imgbtn_set_src(prevBtn, LV_IMGBTN_STATE_RELEASED, NULL, &prev_next, NULL);
+    lv_obj_set_size(prevBtn, prev_next.header.w, prev_next.header.h);
+
+    lv_obj_t* playBtn = lv_imgbtn_create(controls);
+    lv_imgbtn_set_src(playBtn, LV_IMGBTN_STATE_RELEASED, NULL, &play, NULL);
+    lv_obj_set_size(playBtn, play.header.w, play.header.h);
+
+    lv_obj_t* nextBtn = lv_imgbtn_create(controls);
+    lv_imgbtn_set_src(nextBtn, LV_IMGBTN_STATE_RELEASED, NULL, &prev_next, NULL);
+    lv_obj_set_size(nextBtn, prev_next.header.w, prev_next.header.h);
+    lv_obj_set_style_transform_pivot_x(nextBtn, lv_pct(50), 0);
+    lv_obj_set_style_transform_pivot_y(nextBtn, lv_pct(50), 0);
 }
 
 void MainControllerScreen::render(const UiNowPlayingSnapshot& s)
 {
-    if (labelHeader_ == nullptr || labelTime_ == nullptr || labelMeta_ == nullptr || labelState_ == nullptr) {
+    if (topRowDisc_ == nullptr || topRowTrack_ == nullptr) {
         return;
     }
 
-    if (!hasLast_ || s.disc != last_.disc || s.track != last_.track) {
-        char header[40];
-        char discBuf[8];
-        char trackBuf[8];
+    if (!hasLast_ || s.disc != last_.disc) {
+        char discBuf[16];
         if (s.disc == 0) {
-            snprintf(discBuf, sizeof(discBuf), "-");
+            snprintf(discBuf, sizeof(discBuf), "--");
         } else {
             snprintf(discBuf, sizeof(discBuf), "%u", (unsigned)s.disc);
         }
+        if (topRowDiscLabel_ != nullptr) {
+            lv_label_set_text(topRowDiscLabel_, discBuf);
+        }
+    }
+
+    if (!hasLast_ || s.track != last_.track) {
+        char trackBuf[16];
         if (s.track == 0) {
-            snprintf(trackBuf, sizeof(trackBuf), "-");
+            snprintf(trackBuf, sizeof(trackBuf), "--");
         } else {
             snprintf(trackBuf, sizeof(trackBuf), "%u", (unsigned)s.track);
         }
-        snprintf(header, sizeof(header), "Disc %s | Track %s", discBuf, trackBuf);
-        lv_label_set_text(labelHeader_, header);
-    }
-
-    if (!hasLast_ || s.elapsed_sec != last_.elapsed_sec) {
-        char timeBuf[8];
-        format_time_(timeBuf, sizeof(timeBuf), s.elapsed_sec);
-        lv_label_set_text(labelTime_, timeBuf);
-    }
-
-    if (!hasLast_ || !str_equal_(s.artist, last_.artist) || !str_equal_(s.album, last_.album)
-        || !str_equal_(s.title, last_.title)) {
-        const char* artist = s.artist != nullptr ? s.artist : "-";
-        const char* album = s.album != nullptr ? s.album : "-";
-        const char* title = s.title != nullptr ? s.title : "-";
-        char meta[128];
-        snprintf(meta, sizeof(meta), "%s - %s\n%s", artist, album, title);
-        lv_label_set_text(labelMeta_, meta);
-    }
-
-    if (!hasLast_ || s.transport != last_.transport) {
-        const char* stateText = "UNKNOWN";
-        switch (s.transport) {
-            case UiTransportState::Playing:
-                stateText = "PLAYING";
-                break;
-            case UiTransportState::Paused:
-                stateText = "PAUSED";
-                break;
-            case UiTransportState::Stopped:
-                stateText = "STOPPED";
-                break;
-            case UiTransportState::Unknown:
-            default:
-                stateText = "UNKNOWN";
-                break;
+        if (topRowTrackLabel_ != nullptr) {
+            lv_label_set_text(topRowTrackLabel_, trackBuf);
         }
-        lv_label_set_text(labelState_, stateText);
-        if (transportLabel_ != nullptr) {
-            const char* transportText = (s.transport == UiTransportState::Playing) ? "Pause" : "Play";
-            lv_label_set_text(transportLabel_, transportText);
-        }
+    }
+
+    if ((!hasLast_ || s.transport != last_.transport) && transportImg_ != nullptr) {
+    const lv_image_dsc_t* icon = (s.transport == UiTransportState::Playing) ? &pause_icon : &play;
+        lv_img_set_src(transportImg_, icon);
     }
 
     last_ = s;
     hasLast_ = true;
-}
-
-bool MainControllerScreen::str_equal_(const char* a, const char* b)
-{
-    if (a == b) {
-        return true;
-    }
-    if (a == nullptr || b == nullptr) {
-        return false;
-    }
-    return strcmp(a, b) == 0;
-}
-
-void MainControllerScreen::format_time_(char* out, size_t outLen, uint32_t elapsed_sec)
-{
-    uint32_t minutes = elapsed_sec / 60;
-    uint32_t seconds = elapsed_sec % 60;
-    snprintf(out, outLen, "%02lu:%02lu", (unsigned long)minutes, (unsigned long)seconds);
 }
 
 void MainControllerScreen::show()
@@ -220,6 +229,16 @@ void MainControllerScreen::onButtonEvent_(lv_event_t* e)
     }
     if (binding->action == UiAction::Play) {
         binding->screen->handleTransportButtonEvent_(code);
+        return;
+    }
+    if (binding->action == UiAction::Power) {
+        binding->screen->handlePowerButtonEvent_(code);
+        return;
+    }
+    if (binding->action == UiAction::OpenDiscKeypad) {
+        if (code == LV_EVENT_LONG_PRESSED) {
+            binding->screen->emitAction_(binding->action);
+        }
         return;
     }
     if (code == LV_EVENT_RELEASED) {
@@ -270,5 +289,27 @@ void MainControllerScreen::handleTransportButtonEvent_(lv_event_code_t code)
             return;
         }
         emitAction_(transportPressAction_());
+    }
+}
+
+void MainControllerScreen::handlePowerButtonEvent_(lv_event_code_t code)
+{
+    if (code == LV_EVENT_PRESSED) {
+        powerLongPressHandled_ = false;
+        return;
+    }
+
+    if (code == LV_EVENT_LONG_PRESSED) {
+        emitAction_(UiAction::PowerOff);
+        powerLongPressHandled_ = true;
+        return;
+    }
+
+    if (code == LV_EVENT_RELEASED) {
+        if (powerLongPressHandled_) {
+            powerLongPressHandled_ = false;
+            return;
+        }
+        emitAction_(UiAction::PowerOn);
     }
 }

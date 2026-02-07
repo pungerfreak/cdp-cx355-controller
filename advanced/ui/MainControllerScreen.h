@@ -17,11 +17,21 @@ class MainControllerScreen {
     };
 
     lv_obj_t* root_ = nullptr;
-    lv_obj_t* labelHeader_ = nullptr;
-    lv_obj_t* labelTime_ = nullptr;
-    lv_obj_t* labelMeta_ = nullptr;
-    lv_obj_t* labelState_ = nullptr;
+    lv_obj_t* mainScreen = nullptr;
+    lv_obj_t* discTrackRow_ = nullptr;
+    lv_obj_t* topRowPower_ = nullptr;
+    lv_obj_t* topRowDisc_ = nullptr;
+    lv_obj_t* topRowDiscLabel_ = nullptr;
+    lv_obj_t* topRowTrack_ = nullptr;
+    lv_obj_t* topRowTrackLabel_ = nullptr;
+    lv_obj_t* midLine1_ = nullptr;
+    lv_obj_t* midLine2_ = nullptr;
+    lv_obj_t* midLine3_ = nullptr;
+    lv_obj_t* prevBtn = nullptr;
+    lv_obj_t* nextBtn = nullptr;
+    lv_obj_t* playBtn = nullptr;
     lv_obj_t* transportLabel_ = nullptr;
+    lv_obj_t* transportImg_ = nullptr;
     ActionBinding bindings_[5]{};
 
     UiActionCb cb_ = nullptr;
@@ -30,11 +40,11 @@ class MainControllerScreen {
     UiNowPlayingSnapshot last_{};
     bool hasLast_ = false;
     bool transportLongPressHandled_ = false;
+    bool powerLongPressHandled_ = false;
 
     static void onButtonEvent_(lv_event_t* e);
     void emitAction_(UiAction action);
     void handleTransportButtonEvent_(lv_event_code_t code);
+    void handlePowerButtonEvent_(lv_event_code_t code);
     UiAction transportPressAction_() const;
-    static bool str_equal_(const char* a, const char* b);
-    static void format_time_(char* out, size_t outLen, uint32_t elapsed_sec);
 };

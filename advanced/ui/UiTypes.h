@@ -24,6 +24,8 @@ enum class UiAction : uint8_t {
     Pause,
     Stop,
     Power,
+    PowerOn,
+    PowerOff,
     OpenDiscKeypad,
     KeypadDigit0,
     KeypadDigit1,

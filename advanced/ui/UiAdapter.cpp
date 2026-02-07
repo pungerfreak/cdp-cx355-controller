@@ -143,6 +143,8 @@ size_t UiAdapter::actionIndex_(UiAction action)
         case UiAction::Stop:
             return 4;
         case UiAction::Power:
+        case UiAction::PowerOn:
+        case UiAction::PowerOff:
             return 5;
         default:
             return 0;
@@ -172,6 +174,8 @@ bool UiAdapter::isDebouncedAction_(UiAction action)
         case UiAction::Pause:
         case UiAction::Stop:
         case UiAction::Power:
+        case UiAction::PowerOn:
+        case UiAction::PowerOff:
             return true;
         default:
             return false;
@@ -245,6 +249,24 @@ void UiAdapter::onUiAction_(UiAction action)
             }
             if (ok) {
                 powerIsOn_ = !powerIsOn_;
+            }
+            break;
+        }
+        case UiAction::PowerOn: {
+            bool ok = intents.powerOn();
+            Serial.println(ok ? "intent: powerOn" : "intent: powerOn (rejected)");
+            if (ok) {
+                powerIsOn_ = true;
+                powerToggleKnown_ = true;
+            }
+            break;
+        }
+        case UiAction::PowerOff: {
+            bool ok = intents.powerOff();
+            Serial.println(ok ? "intent: powerOff" : "intent: powerOff (rejected)");
+            if (ok) {
+                powerIsOn_ = false;
+                powerToggleKnown_ = true;
             }
             break;
         }

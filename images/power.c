@@ -62,10 +62,9 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMAGE_POWER u
 };
 
 const lv_image_dsc_t power = {
-  .header.cf = LV_COLOR_FORMAT_ARGB8888,
-  .header.magic = LV_IMAGE_HEADER_MAGIC,
-  .header.w = 36,
-  .header.h = 37,
-  .data_size = 1332 * 4,
-  .data = power_map,
+    {LV_IMAGE_HEADER_MAGIC, LV_COLOR_FORMAT_ARGB8888, 0, 36, 37, 36 * 4, 0},
+    1332 * 4,
+    power_map,
+    NULL,
+    NULL
 };
