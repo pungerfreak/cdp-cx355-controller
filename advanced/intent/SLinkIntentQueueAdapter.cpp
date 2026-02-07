@@ -15,6 +15,14 @@ bool SLinkIntentQueueAdapter::pause() {
   return enqueue({SLinkIntentType::Pause});
 }
 
+bool SLinkIntentQueueAdapter::nextTrack() {
+  return enqueue({SLinkIntentType::Next});
+}
+
+bool SLinkIntentQueueAdapter::prevTrack() {
+  return enqueue({SLinkIntentType::Prev});
+}
+
 bool SLinkIntentQueueAdapter::powerOn() {
   return enqueue({SLinkIntentType::PowerOn});
 }

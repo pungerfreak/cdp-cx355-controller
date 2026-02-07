@@ -20,6 +20,8 @@ public:
   bool play() override;
   bool stop() override;
   bool pause() override;
+  bool nextTrack() override;
+  bool prevTrack() override;
   bool powerOn() override;
   bool powerOff() override;
   bool changeDisc(uint16_t disc) override;

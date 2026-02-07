@@ -13,6 +13,8 @@ bool SLinkFrameBuilder::build(const SLinkUnitCommand& cmd,
     case SLinkUnitCommandType::Play:
     case SLinkUnitCommandType::Stop:
     case SLinkUnitCommandType::Pause:
+    case SLinkUnitCommandType::Next:
+    case SLinkUnitCommandType::Prev:
     case SLinkUnitCommandType::PowerOn:
     case SLinkUnitCommandType::PowerOff: {
       SLinkCommandId id = PLAY;
@@ -25,6 +27,12 @@ bool SLinkFrameBuilder::build(const SLinkUnitCommand& cmd,
           break;
         case SLinkUnitCommandType::Pause:
           id = PAUSE;
+          break;
+        case SLinkUnitCommandType::Next:
+          id = NEXT;
+          break;
+        case SLinkUnitCommandType::Prev:
+          id = PREV;
           break;
         case SLinkUnitCommandType::PowerOn:
           id = POWER_ON;

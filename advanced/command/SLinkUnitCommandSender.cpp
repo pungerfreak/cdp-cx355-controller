@@ -34,6 +34,14 @@ bool SLinkUnitCommandSender::pause() {
   return sendSimple(SLinkUnitCommandType::Pause);
 }
 
+bool SLinkUnitCommandSender::nextTrack() {
+  return sendSimple(SLinkUnitCommandType::Next);
+}
+
+bool SLinkUnitCommandSender::prevTrack() {
+  return sendSimple(SLinkUnitCommandType::Prev);
+}
+
 bool SLinkUnitCommandSender::powerOn() {
   return sendSimple(SLinkUnitCommandType::PowerOn);
 }
