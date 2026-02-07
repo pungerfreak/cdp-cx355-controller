@@ -27,6 +27,7 @@ enum class UiAction : uint8_t {
     PowerOn,
     PowerOff,
     OpenDiscKeypad,
+    OpenCddbScreen,
     KeypadDigit0,
     KeypadDigit1,
     KeypadDigit2,
@@ -40,7 +41,8 @@ enum class UiAction : uint8_t {
     KeypadBackspace,
     KeypadClear,
     KeypadGo,
-    KeypadCancel
+    KeypadCancel,
+    StartCddbIndex
 };
 
 using UiActionCb = void(*)(UiAction action, void* user);

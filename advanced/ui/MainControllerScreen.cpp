@@ -20,6 +20,7 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     bindings_[2] = {UiAction::NextTrack, this};
     bindings_[3] = {UiAction::Power, this};
     bindings_[4] = {UiAction::OpenDiscKeypad, this};
+    bindings_[5] = {UiAction::OpenCddbScreen, this};
 
     auto wire_button_events = [&](lv_obj_t* obj, ActionBinding* binding) {
         lv_obj_add_event_cb(obj, MainControllerScreen::onButtonEvent_, LV_EVENT_PRESSED, binding);
@@ -64,6 +65,39 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_set_size(powerBtn, power.header.w, power.header.h);
     wire_button_events(powerBtn, &bindings_[3]);
     topRowPower_ = powerBtn;
+
+    lv_obj_t* shortcutRow = lv_obj_create(root_);
+    lv_obj_set_layout(shortcutRow, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(shortcutRow, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(shortcutRow,
+        LV_FLEX_ALIGN_CENTER,   // justify-content
+        LV_FLEX_ALIGN_CENTER,   // align-content
+        LV_FLEX_ALIGN_CENTER    // align-items
+    );
+    lv_obj_set_style_pad_all(shortcutRow, 0, 0);
+    lv_obj_set_style_pad_column(shortcutRow, 10, 0);
+    lv_obj_set_style_border_width(shortcutRow, 0, 0);
+    lv_obj_set_style_bg_opa(shortcutRow, LV_OPA_TRANSP, 0);
+    lv_obj_set_style_margin_top(shortcutRow, 6, 0);
+    lv_obj_set_size(shortcutRow, LV_PCT(100), LV_SIZE_CONTENT);
+    auto add_shortcut = [&](const char* text, ActionBinding* binding) {
+        lv_obj_t* btn = lv_btn_create(shortcutRow);
+        lv_obj_set_size(btn, 80, 28);
+        lv_obj_set_style_radius(btn, 10, 0);
+        lv_obj_set_style_bg_color(btn, color_bg, 0);
+        lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
+        lv_obj_set_style_border_width(btn, 1, 0);
+        lv_obj_set_style_border_color(btn, color_accent, 0);
+        lv_obj_set_style_border_opa(btn, LV_OPA_COVER, 0);
+        wire_button_events(btn, binding);
+        lv_obj_t* label = lv_label_create(btn);
+        lv_label_set_text(label, text);
+        lv_obj_set_style_text_color(label, color_accent, 0);
+        lv_obj_add_style(label, &style_font_normal, 0);
+        lv_obj_center(label);
+    };
+    add_shortcut("Disc", &bindings_[4]);
+    add_shortcut("CDDB", &bindings_[5]);
 
     // Top row: Disc / Track numbers
     const lv_coord_t disc_track_row_height = 28;
@@ -251,8 +285,8 @@ void MainControllerScreen::onButtonEvent_(lv_event_t* e)
         binding->screen->handlePowerButtonEvent_(code);
         return;
     }
-    if (binding->action == UiAction::OpenDiscKeypad) {
-        if (code == LV_EVENT_LONG_PRESSED) {
+    if (binding->action == UiAction::OpenDiscKeypad || binding->action == UiAction::OpenCddbScreen) {
+        if (code == LV_EVENT_RELEASED) {
             binding->screen->emitAction_(binding->action);
         }
         return;

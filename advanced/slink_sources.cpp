@@ -27,6 +27,7 @@
 #include "unit/SLinkUnitEventPublisher.cpp"
 #include "unit/SLinkUnitStateStore.cpp"
 #include "ui/DiscSelectorScreen.cpp"
+#include "ui/CddbScreen.cpp"
 #include "ui/MainControllerScreen.cpp"
 #include "ui/UiTypes.h"
 #include "ui/UiApp.cpp"
