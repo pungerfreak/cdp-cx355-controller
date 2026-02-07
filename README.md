@@ -16,6 +16,9 @@ Docs:
 https://lvgl.io/tools/fontconverter
 4BPP
 
+a-zA-Z: 0x41-0x5A, 0x61-0x7A, 0x30-0x39 (18px)
+0-9: 0x30-0x39 (22 px)
+
 ## Exporting Images for LVGL
 
 This project uses **LVGL-converted bitmap images** for UI icons and graphics.
