@@ -34,6 +34,8 @@ public:
   SLinkCommandIntentSource& intentSource();
   SLinkTx& tx();
   void clearIntents();
+  // Push the current cached unit state to all observers (UI, printers, etc.).
+  void publishSnapshot();
 
 private:
   static constexpr uint8_t kTxPin = 2;

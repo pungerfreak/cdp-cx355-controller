@@ -1,6 +1,6 @@
 #include "CddbScreen.h"
 
-#include "../fonts/open_sans_18.c"
+extern const lv_font_t open_sans_18;
 
 void CddbScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
 {

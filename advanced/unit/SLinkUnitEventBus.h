@@ -4,7 +4,9 @@
 
 class SLinkUnitEventBus {
 public:
-  static constexpr uint8_t kMaxObservers = 4;
+  // Allow multiple UI/diagnostic observers (state store, sender sync,
+  // printer, UI adapter, CDDB lookup, etc.)
+  static constexpr uint8_t kMaxObservers = 8;
 
   bool addObserver(SLinkUnitEventObserver& observer);
   bool removeObserver(SLinkUnitEventObserver& observer);

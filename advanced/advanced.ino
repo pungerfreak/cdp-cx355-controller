@@ -82,14 +82,15 @@ void setup() {
     Serial.println("cddb storage unavailable; CDDB data will not be saved");
   }
 
-  slinkSystem.addCommandInput(slinkConsole);
-  slinkSystem.addEventOutput(slinkPrinter);
   slinkSystem.begin();
   cddbLookup.start();
   app.init();
   adapter.setIndexer(&cddbIndexer, &loadingScreen);
   consoleAdapter.start();
   adapter.start();
+  // Push whatever state we have cached, then ask the unit for fresh status so the UI syncs at boot.
+  slinkSystem.publishSnapshot();
+  adapter.requestStatus();
 }
 
 void loop() {

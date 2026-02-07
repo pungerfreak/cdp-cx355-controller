@@ -109,3 +109,10 @@ void SLinkSystem::emitInitialState() {
   SLinkTrackInfo trackInfo;
   _unitStateStore.stateInfo(discInfo, trackInfo);
 }
+
+void SLinkSystem::publishSnapshot() {
+  SLinkDiscInfo discInfo;
+  SLinkTrackInfo trackInfo;
+  _unitStateStore.stateInfo(discInfo, trackInfo);
+  _unitEventPublisher.status(discInfo, trackInfo, _unitStateStore.transportState(), nullptr);
+}

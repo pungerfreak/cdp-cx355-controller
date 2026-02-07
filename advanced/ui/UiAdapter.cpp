@@ -30,6 +30,14 @@ void UiAdapter::start()
     system_.getUnitStateSnapshot(disc_, track_);
     refreshFromSnapshot_();
     app_.setActionCallback(&UiAdapter::onUiActionThunk_, this);
+
+    // If the unit is powered off, we won't receive any status/events until it is on.
+    // Proactively issue a power-on at boot to guarantee we get state for the UI.
+    if (bootStatusPending_) {
+        system_.intentSource().powerOn();
+        powerToggleKnown_ = true;
+        powerIsOn_ = true;
+    }
 }
 
 void UiAdapter::stop()
@@ -62,8 +70,12 @@ void UiAdapter::onUnitEvent(const SLinkUnitEvent& e)
                         system_.applyInitialState(e.disc.disc, 0);
                     }
                     system_.intentSource().powerOn();
+                    bootStatusPending_ = false;
+                } else if (e.transport != SLinkTransportState::Unknown &&
+                           e.transport != SLinkTransportState::Unchanged) {
+                    // Got a real transport state; no need to auto-power.
+                    bootStatusPending_ = false;
                 }
-                bootStatusPending_ = false;
             }
             break;
         case SLinkUnitEventType::CurrentDiscBankSwitchNeeded:
