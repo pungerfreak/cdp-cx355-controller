@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Arduino.h>
 #include "UiTypes.h"
 
 class MainControllerScreen {
@@ -41,10 +42,13 @@ class MainControllerScreen {
     bool hasLast_ = false;
     bool transportLongPressHandled_ = false;
     bool powerLongPressHandled_ = false;
+    bool discLongPressHandled_ = false;
+    uint32_t lastDiscTapMs_ = 0;
 
     static void onButtonEvent_(lv_event_t* e);
     void emitAction_(UiAction action);
     void handleTransportButtonEvent_(lv_event_code_t code);
     void handlePowerButtonEvent_(lv_event_code_t code);
+    void handleDiscButtonEvent_(lv_event_code_t code);
     UiAction transportPressAction_() const;
 };
