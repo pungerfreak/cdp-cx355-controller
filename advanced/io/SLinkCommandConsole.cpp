@@ -12,7 +12,7 @@ SLinkCommandConsole::SLinkCommandConsole(Stream& io,
     : _io(io), _input(input), _rawTx(rawTx), _cddbStorage(cddbStorage), _printTx(printTx) {}
 
 void SLinkCommandConsole::printHelp() {
-  _io.println("commands: PLAY, STOP, PAUSE, NEXT, PREV, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, GET_DISC_INFO, SEND <HEX>, GET_CURRENT_DISC, GET_STATUS, CDDB_STATUS, CDDB_LIST, CDDB_SHOW <disc>");
+  _io.println("commands: PLAY, STOP, PAUSE, NEXT, PREV, POWER_ON, POWER_OFF, CHANGE_DISC <1-300>, CHANGE_TRACK <1-99>, GET_DISC_INFO, SEND <HEX>, GET_CURRENT_DISC, GET_STATUS, CDDB_STATUS, CDDB_LIST, CDDB_SHOW <disc>, CDDB_CLEAR");
 }
 
 bool SLinkCommandConsole::isWhitespace(char c) {
@@ -295,6 +295,18 @@ bool SLinkCommandConsole::dispatchCddb(const char* cmd) {
     }
     if (!any) {
       _io.println("no cddb files");
+    }
+    return true;
+  }
+
+  if (strcmp(cmd, "CDDB_CLEAR") == 0) {
+    uint16_t deleted = 0;
+    if (_cddbStorage->clearAll(&deleted)) {
+      _io.print("cleared ");
+      _io.print(deleted);
+      _io.println(" cddb entries");
+    } else {
+      _io.println("failed to clear cddb entries");
     }
     return true;
   }

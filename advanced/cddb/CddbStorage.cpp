@@ -54,6 +54,25 @@ bool CddbStorage::remove(uint16_t disc) {
   return SPIFFS.remove(p);
 }
 
+bool CddbStorage::clearAll(uint16_t* deletedCount) {
+  if (!mounted_ && !begin()) return false;
+  if (deletedCount) *deletedCount = 0;
+  bool ok = true;
+
+  for (uint16_t d = 1; d <= 300; ++d) {
+    String p = path_(d);
+    if (SPIFFS.exists(p)) {
+      if (SPIFFS.remove(p)) {
+        if (deletedCount) ++(*deletedCount);
+      } else {
+        ok = false;
+      }
+    }
+  }
+
+  return ok;
+}
+
 bool CddbStorage::trackCount(uint16_t disc, uint8_t& outCount) const {
   outCount = 0;
   if (!mounted_) return false;

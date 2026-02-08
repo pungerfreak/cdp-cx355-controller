@@ -13,6 +13,7 @@ public:
   bool has(uint16_t disc) const;
   bool trackCount(uint16_t disc, uint8_t& outCount) const;
   bool remove(uint16_t disc);
+  bool clearAll(uint16_t* deletedCount = nullptr);
   bool mounted() const { return mounted_; }
 
 private:
