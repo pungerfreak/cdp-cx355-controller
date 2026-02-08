@@ -11,13 +11,27 @@ Docs:
 - UI snapshot-driven flow (UiApp/UiAdapter/screens): `advanced/docs/UI_Snapshot_Flow.md`
 - Serial console flow and commands: `advanced/docs/Console_Flow.md`
 
-## Using fonts
+## Fonts (LVGL)
 
-https://lvgl.io/tools/fontconverter
-4BPP
+How to add a new font without linker conflicts:
 
-a-zA-Z: 0x41-0x5A, 0x61-0x7A, 0x30-0x39 (18px)
-0-9: 0x30-0x39 (22 px)
+1) Generate the font with the LVGL font converter (https://lvgl.io/tools/fontconverter). Export as C array (`.c`), **4 bits per pixel (4 BPP)**, keep the filename stable (e.g., `open_sans_18.c`, `open_sans_18_bold.c`).
+
+2) Compile each font exactly once:
+   - Preferred: create a tiny wrapper C file in `advanced/`:
+     - `advanced/open_sans_18_wrapper.c` → `#include "../fonts/open_sans_18.c"`
+     - `advanced/open_sans_18_bold_wrapper.c` → `#include "../fonts/open_sans_18_bold.c"`
+   - Add these wrappers to the sketch so Arduino builds them once. Do **not** `#include` the font `.c` files inside multiple C++ sources.
+
+3) In UI code, only declare the symbols:
+```cpp
+extern const lv_font_t open_sans_18;
+extern const lv_font_t open_sans_18_bold;
+// ...
+lv_obj_set_style_text_font(label, &open_sans_18, 0);
+```
+
+This avoids duplicate symbols and C++ designator-order errors while keeping fonts accessible everywhere.
 
 ## Exporting Images for LVGL
 

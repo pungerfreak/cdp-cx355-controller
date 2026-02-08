@@ -1,8 +1,9 @@
 #include "MainControllerScreen.h"
 
 #include <stdio.h>
-#include "../fonts/open_sans_18_bold.c"
-#include "../fonts/open_sans_18.c"
+#include <lvgl.h>
+extern const lv_font_t open_sans_18;
+extern const lv_font_t open_sans_18_bold;
 #include "../images/power.c"
 #include "../images/disc.c"
 #include "../images/track.c"

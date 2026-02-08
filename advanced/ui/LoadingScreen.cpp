@@ -1,5 +1,8 @@
 #include "ui/LoadingScreen.h"
 
+extern const lv_font_t open_sans_18;
+extern const lv_font_t open_sans_18_bold;
+
 namespace {
 void setup_root(lv_obj_t* root) {
   lv_obj_set_size(root, LV_HOR_RES, LV_VER_RES);
@@ -14,43 +17,53 @@ void LoadingScreen::init(lv_obj_t* parent) {
   if (!parent) parent = lv_screen_active();
   root_ = lv_obj_create(parent);
   setup_root(root_);
-  lv_obj_set_style_bg_color(root_, lv_color_white(), 0);
+  const lv_color_t color_bg = lv_color_hex(0x000000);
+  const lv_color_t color_accent = lv_color_hex(0xDDCC0B);
+  const lv_color_t color_text = lv_color_hex(0xFFFFFF);
+  lv_obj_set_style_bg_color(root_, color_bg, 0);
   lv_obj_set_style_bg_opa(root_, LV_OPA_COVER, 0);
+  lv_obj_set_style_border_width(root_, 0, 0);
 
   labelStage_ = lv_label_create(root_);
   lv_obj_set_size(labelStage_, LV_HOR_RES - 20, 24);
   lv_obj_set_pos(labelStage_, 10, 40);
   lv_obj_set_style_text_align(labelStage_, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_set_style_text_color(labelStage_, color_text, 0);
+  lv_obj_set_style_text_font(labelStage_, &open_sans_18_bold, 0);
   lv_label_set_text(labelStage_, "Starting CDDB scan...");
 
   labelDisc_ = lv_label_create(root_);
   lv_obj_set_size(labelDisc_, LV_HOR_RES - 20, 20);
   lv_obj_set_pos(labelDisc_, 10, 70);
   lv_obj_set_style_text_align(labelDisc_, LV_TEXT_ALIGN_CENTER, 0);
+  lv_obj_set_style_text_color(labelDisc_, color_text, 0);
+  lv_obj_set_style_text_font(labelDisc_, &open_sans_18, 0);
   lv_label_set_text(labelDisc_, "Disc 0 / 0");
 
   bar_ = lv_bar_create(root_);
   lv_obj_set_size(bar_, LV_HOR_RES - 40, 16);
   lv_obj_set_pos(bar_, 20, 110);
   lv_bar_set_range(bar_, 0, 100);
-  lv_obj_set_style_bg_color(bar_, lv_color_black(), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(bar_, LV_OPA_20, LV_PART_MAIN);
-  lv_obj_set_style_bg_color(bar_, lv_color_black(), LV_PART_INDICATOR);
+  lv_obj_set_style_bg_color(bar_, lv_color_hex(0x444444), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(bar_, LV_OPA_30, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(bar_, color_accent, LV_PART_INDICATOR);
   lv_obj_set_style_bg_opa(bar_, LV_OPA_COVER, LV_PART_INDICATOR);
   lv_bar_set_value(bar_, 0, LV_ANIM_OFF);
 
   btnCancel_ = lv_btn_create(root_);
-  lv_obj_set_size(btnCancel_, 120, 34);
+  lv_obj_set_size(btnCancel_, 140, 38);
   lv_obj_align(btnCancel_, LV_ALIGN_CENTER, 0, 60);
-  lv_obj_set_style_bg_color(btnCancel_, lv_color_make(0xF2, 0xF2, 0xF2), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(btnCancel_, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_color(btnCancel_, lv_color_make(0x99, 0x99, 0x99), LV_PART_MAIN);
+  lv_obj_set_style_bg_color(btnCancel_, color_bg, LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(btnCancel_, LV_OPA_TRANSP, LV_PART_MAIN);
+  lv_obj_set_style_border_color(btnCancel_, color_accent, LV_PART_MAIN);
   lv_obj_set_style_border_opa(btnCancel_, LV_OPA_COVER, LV_PART_MAIN);
-  lv_obj_set_style_border_width(btnCancel_, 1, LV_PART_MAIN);
-  lv_obj_set_style_radius(btnCancel_, 10, LV_PART_MAIN);
+  lv_obj_set_style_border_width(btnCancel_, 2, LV_PART_MAIN);
+  lv_obj_set_style_radius(btnCancel_, 12, LV_PART_MAIN);
+  lv_obj_set_style_bg_color(btnCancel_, lv_color_hex(0x222222), LV_PART_MAIN | LV_STATE_PRESSED);
   lv_obj_t* labelCancel = lv_label_create(btnCancel_);
   lv_label_set_text(labelCancel, "Cancel");
-  lv_obj_set_style_text_color(labelCancel, lv_color_black(), LV_PART_MAIN);
+  lv_obj_set_style_text_color(labelCancel, color_accent, LV_PART_MAIN);
+  lv_obj_set_style_text_font(labelCancel, &open_sans_18, LV_PART_MAIN);
   lv_obj_center(labelCancel);
   lv_obj_move_foreground(btnCancel_);
 }
