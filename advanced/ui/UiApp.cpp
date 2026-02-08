@@ -3,13 +3,10 @@
 void UiApp::init()
 {
     lv_obj_t* screen = lv_screen_active();
-    root_ = lv_obj_create(screen);
-    setup_root_obj(root_);
-    lv_obj_set_style_bg_opa(root_, LV_OPA_TRANSP, 0);
 
-    main_.init(root_, UiApp::onScreenActionThunk_, this);
-    disc_.init(root_, UiApp::onScreenActionThunk_, this);
-    cddb_.init(root_, UiApp::onScreenActionThunk_, this);
+    main_.init(screen, UiApp::onScreenActionThunk_, this);
+    disc_.init(screen, UiApp::onScreenActionThunk_, this);
+    cddb_.init(screen, UiApp::onScreenActionThunk_, this);
     switchToMain_();
 }
 

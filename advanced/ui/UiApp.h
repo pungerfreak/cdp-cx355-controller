@@ -18,7 +18,7 @@ class UiApp {
     void setActionCallback(UiActionCb cb, void* user);
     void setKeypadError(bool on);
     void showNowPlaying();
-    lv_obj_t* root() const { return root_; }
+    lv_obj_t* root() const { return lv_screen_active(); }
 
   private:
     enum class ActiveScreen : uint8_t {
@@ -32,8 +32,6 @@ class UiApp {
     void switchToMain_();
     void switchToDiscSelector_();
     void switchToCddb_();
-
-    lv_obj_t* root_ = nullptr;
 
     UiActionCb cb_ = nullptr;
     void* user_ = nullptr;
