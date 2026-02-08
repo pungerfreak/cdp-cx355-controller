@@ -18,6 +18,7 @@ void DiscSelectorScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     const lv_color_t color_accent = lv_color_hex(0xDDCC0B);
     lv_obj_set_style_bg_color(root_, color_bg, 0);
     lv_obj_set_style_bg_opa(root_, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(root_, 0, 0);
     lv_obj_add_flag(root_, LV_OBJ_FLAG_HIDDEN);
 
     const lv_coord_t screen_w = LV_HOR_RES;

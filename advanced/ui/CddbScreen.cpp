@@ -17,6 +17,7 @@ void CddbScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     const lv_color_t color_text = lv_color_hex(0xFFFFFF);
     lv_obj_set_style_bg_color(root_, color_bg, 0);
     lv_obj_set_style_bg_opa(root_, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(root_, 0, 0);
     lv_obj_add_flag(root_, LV_OBJ_FLAG_HIDDEN);
 
     lv_obj_t* title = lv_label_create(root_);

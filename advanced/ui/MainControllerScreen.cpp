@@ -63,6 +63,7 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
 
     lv_obj_set_style_bg_color(root_, color_bg, 0);
     lv_obj_set_style_bg_opa(root_, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(root_, 0, 0);
 
     // Top row: Power button as icon
     lv_obj_t* powerBtn = lv_imgbtn_create(root_);
