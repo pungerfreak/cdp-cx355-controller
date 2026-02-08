@@ -43,6 +43,17 @@ bool CddbStorage::save(uint16_t disc, const CddbMetadata& meta, const CddbLookup
     if (i) f.print(',');
     f.print(lookup.trackSeconds[i]);
   }
+  f.print("],\"candidates\":[");
+  for (size_t i = 0; i < meta.candidateCount; ++i) {
+    if (i) f.print(',');
+    f.print("{\"category\":\"");
+    f.print(meta.candidateCategory[i]);
+    f.print("\",\"discid\":\"");
+    f.print(meta.candidateDiscId[i]);
+    f.print("\",\"title\":\"");
+    f.print(meta.candidateTitle[i]);
+    f.print("\"}");
+  }
   f.print("]}");
   f.close();
   return true;

@@ -30,7 +30,7 @@ bool CddbClient::queryAndRead(const String& queryCmd, CddbMetadata& out) {
   }
 
   String discId;
-  if (!parseQuery_(queryBody, discId)) {
+  if (!parseQuery_(queryBody, discId, &out)) {
     disconnectWifi_();
     return false;
   }
@@ -109,7 +109,7 @@ String CddbClient::httpGet_(const String& url) {
   return body;
 }
 
-bool CddbClient::parseQuery_(const String& body, String& discIdOut) {
+bool CddbClient::parseQuery_(const String& body, String& discIdOut, CddbMetadata* meta) {
   int start = 0;
   int end = body.indexOf('\n', start);
   if (end < 0) end = body.length();
@@ -120,6 +120,10 @@ bool CddbClient::parseQuery_(const String& body, String& discIdOut) {
     return false;
   }
 
+  if (meta) {
+    meta->candidateCount = 0;
+  }
+
   start = end + 1;
   while (start < body.length()) {
     end = body.indexOf('\n', start);
@@ -127,15 +131,15 @@ bool CddbClient::parseQuery_(const String& body, String& discIdOut) {
     String line = body.substring(start, end);
     line.trim();
     if (line == ".") break;
-    if (parseCandidateLine_(line, discIdOut)) {
-      return true;
+    if (parseCandidateLine_(line, discIdOut, meta)) {
+      // Keep reading to collect all candidates, but remember first discId as default.
     }
     start = end + 1;
   }
 
   // fallback: try status line for 200 responses that embed the data
   if (discIdOut.isEmpty()) {
-    parseCandidateLine_(statusLine, discIdOut);
+    parseCandidateLine_(statusLine, discIdOut, meta);
   }
   return !discIdOut.isEmpty();
 }
@@ -203,36 +207,50 @@ int CddbClient::parseStatus_(const String& line) const {
   return code;
 }
 
-bool CddbClient::parseCandidateLine_(const String& line, String& discIdOut) const {
+bool CddbClient::parseCandidateLine_(const String& line, String& discIdOut, CddbMetadata* meta) const {
   String working = line;
   working.trim();
+  String category, discId, title;
   if (working.startsWith("data ")) {
     int firstSpace = working.indexOf(' ');
     int secondSpace = working.indexOf(' ', firstSpace + 1);
     if (secondSpace < 0) secondSpace = working.length();
-    discIdOut = working.substring(firstSpace + 1, secondSpace);
-    return !discIdOut.isEmpty();
+    discId = working.substring(firstSpace + 1, secondSpace);
+    category = working.substring(0, firstSpace);
+    title = working.substring(secondSpace + 1);
   }
-
   // Status line for 200 responses: "200 <category> <discid> ..."
-  if (parseStatus_(working) == 200) {
+  else if (parseStatus_(working) == 200) {
     int first = working.indexOf(' ');
     if (first < 0) return false;
     int second = working.indexOf(' ', first + 1);
     if (second < 0) return false;
     int third = working.indexOf(' ', second + 1);
     if (third < 0) third = working.length();
-    discIdOut = working.substring(second + 1, third);
-    return !discIdOut.isEmpty();
+    category = working.substring(first + 1, second);
+    discId = working.substring(second + 1, third);
+    title = working.substring(third + 1);
+  }
+  else {
+    int first = working.indexOf(' ');
+    if (first <= 0) return false;
+    int second = working.indexOf(' ', first + 1);
+    if (second <= 0) second = working.length();
+    category = working.substring(0, first);
+    discId = working.substring(first + 1, second);
+    title = working.substring(second + 1);
   }
 
-  // generic: second token is disc id
-  int first = working.indexOf(' ');
-  if (first <= 0) return false;
-  int second = working.indexOf(' ', first + 1);
-  if (second <= 0) second = working.length();
-  discIdOut = working.substring(first + 1, second);
-  return !discIdOut.isEmpty();
+  if (discIdOut.isEmpty()) {
+    discIdOut = discId;
+  }
+  if (meta && meta->candidateCount < CddbMetadata::kMaxCandidates) {
+    size_t idx = meta->candidateCount++;
+    meta->candidateCategory[idx] = category;
+    meta->candidateDiscId[idx] = discId;
+    meta->candidateTitle[idx] = title;
+  }
+  return !discId.isEmpty();
 }
 
 String CddbClient::trimPrefix_(const String& s, const char* prefix) const {

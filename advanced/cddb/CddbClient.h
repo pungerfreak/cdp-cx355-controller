@@ -6,11 +6,16 @@
 
 struct CddbMetadata {
   static constexpr size_t kMaxTracks = 100;
+  static constexpr size_t kMaxCandidates = 10;
   String discId;
   String artist;
   String title;
   String tracks[kMaxTracks];
   size_t trackCount = 0;
+  size_t candidateCount = 0;
+  String candidateCategory[kMaxCandidates];
+  String candidateDiscId[kMaxCandidates];
+  String candidateTitle[kMaxCandidates];
 };
 
 struct CddbClientConfig {
@@ -36,10 +41,10 @@ private:
   String buildQueryUrl_(const String& cmd, const char* overrideSubdomain = nullptr) const;
   String buildReadUrl_(const String& discId, const char* overrideSubdomain = nullptr) const;
   String httpGet_(const String& url);
-  bool parseQuery_(const String& body, String& discIdOut);
+  bool parseQuery_(const String& body, String& discIdOut, CddbMetadata* meta);
   bool parseRead_(const String& body, CddbMetadata& out);
   int parseStatus_(const String& line) const;
-  bool parseCandidateLine_(const String& line, String& discIdOut) const;
+  bool parseCandidateLine_(const String& line, String& discIdOut, CddbMetadata* meta) const;
   String trimPrefix_(const String& s, const char* prefix) const;
 
   CddbClientConfig cfg_;
