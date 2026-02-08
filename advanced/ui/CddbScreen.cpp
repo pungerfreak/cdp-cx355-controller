@@ -35,12 +35,6 @@ void CddbScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
     lv_obj_set_style_text_font(title, &open_sans_18_bold, 0);
     lv_obj_set_style_text_align(title, LV_TEXT_ALIGN_CENTER, 0);
 
-    lv_obj_t* subtitle = lv_label_create(root_);
-    lv_label_set_text(subtitle, "Build local index from discs");
-    lv_obj_set_style_text_color(subtitle, color_text, 0);
-    lv_obj_set_style_text_font(subtitle, &open_sans_18, 0);
-    lv_obj_set_style_text_align(subtitle, LV_TEXT_ALIGN_CENTER, 0);
-
     auto wire_button_events = [&](lv_obj_t* obj, ActionBinding* binding) {
         lv_obj_add_event_cb(obj, CddbScreen::onButtonEvent_, LV_EVENT_RELEASED, binding);
     };
