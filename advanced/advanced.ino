@@ -43,7 +43,6 @@ static UiApp app;
 static UiAdapter adapter(slinkSystem, app);
 static LoadingScreen loadingScreen;
 static bool cancelRequested = false;
-static bool uiVisible = true;
 
 static void onCancelClicked(lv_event_t* e) {
   cancelRequested = true;
@@ -104,24 +103,18 @@ void loop() {
     slinkSystem.clearIntents();
     slinkSystem.intentSource().stop();
     loadingScreen.hide();
-    lv_obj_clear_flag(app.root(), LV_OBJ_FLAG_HIDDEN);
-    uiVisible = true;
   }
   cddbIndexer.tick(now);
   CddbIndexStatus st = cddbIndexer.status();
   static bool wasActive = false;
   if (st.active) {
-    if (uiVisible) {
-      lv_obj_add_flag(app.root(), LV_OBJ_FLAG_HIDDEN);
-      uiVisible = false;
-    }
     loadingScreen.show();
     loadingScreen.setStatus(st.stage, st.currentDisc, st.totalDiscs, st.percent, st.unitsDone, st.unitsTotal);
-  } else if (wasActive) {
+  } else {
+    if (wasActive) {
+      slinkSystem.intentSource().stop();
+    }
     loadingScreen.hide();
-    slinkSystem.intentSource().stop();
-    lv_obj_clear_flag(app.root(), LV_OBJ_FLAG_HIDDEN);
-    uiVisible = true;
   }
   wasActive = st.active;
 
