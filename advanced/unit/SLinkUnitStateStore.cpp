@@ -58,6 +58,11 @@ void SLinkUnitStateStore::onUnitEvent(const SLinkUnitEvent& event) {
       }
       updateDisc(event.disc);
       break;
+    case SLinkUnitEventType::Ready:
+    case SLinkUnitEventType::LoadingDisc:
+    case SLinkUnitEventType::NoDisc:
+      // No state change needed for these indexing helper events.
+      break;
     case SLinkUnitEventType::TrackChanged:
       updateDisc(event.disc);
       updateTrack(event.track);

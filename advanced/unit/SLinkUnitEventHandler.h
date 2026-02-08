@@ -67,6 +67,7 @@ public:
   virtual void discReady(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) = 0;
   virtual void discLoaded(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) = 0;
   virtual void loadingDisc(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) = 0;
+  virtual void noDisc(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) = 0;
   virtual void changingTrack(const SLinkDiscInfo& disc,
                              const SLinkTrackInfo& track,
                              const SLinkDebugInfo* debug) = 0;

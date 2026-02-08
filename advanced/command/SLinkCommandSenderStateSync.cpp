@@ -12,6 +12,9 @@ void SLinkCommandSenderStateSync::updateDisc(const SLinkDiscInfo& disc) {
 void SLinkCommandSenderStateSync::onUnitEvent(const SLinkUnitEvent& event) {
   switch (event.type) {
     case SLinkUnitEventType::DiscChanged:
+    case SLinkUnitEventType::Ready:
+    case SLinkUnitEventType::LoadingDisc:
+    case SLinkUnitEventType::NoDisc:
     case SLinkUnitEventType::TrackChanged:
       updateDisc(event.disc);
       break;

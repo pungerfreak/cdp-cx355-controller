@@ -201,6 +201,11 @@ void SLinkDebugPrinter::loadingDisc(const SLinkDiscInfo& disc,
   printLine("LOADING_DISC", &disc, nullptr, debug);
 }
 
+void SLinkDebugPrinter::noDisc(const SLinkDiscInfo& disc,
+                               const SLinkDebugInfo* debug) {
+  printLine("NO_DISC", &disc, nullptr, debug);
+}
+
 void SLinkDebugPrinter::changingTrack(const SLinkDiscInfo& disc,
                                       const SLinkTrackInfo& track,
                                       const SLinkDebugInfo* debug) {

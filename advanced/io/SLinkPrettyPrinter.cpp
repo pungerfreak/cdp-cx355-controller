@@ -17,6 +17,9 @@ void SLinkPrettyPrinter::onUnitEvent(const SLinkUnitEvent& event) {
       printTransportEvent(event.transport, event.debug);
       break;
     case SLinkUnitEventType::DiscChanged:
+    case SLinkUnitEventType::Ready:
+    case SLinkUnitEventType::LoadingDisc:
+    case SLinkUnitEventType::NoDisc:
       printDiscEvent(event);
       break;
     case SLinkUnitEventType::TrackChanged:
@@ -77,6 +80,9 @@ void SLinkPrettyPrinter::printDiscEvent(const SLinkUnitEvent& event) {
       break;
     case 0x52:
       label = "DISC_READY";
+      break;
+    case 0x05:
+      label = "NO_DISC";
       break;
     case 0x54:
       label = "LOADING_DISC";

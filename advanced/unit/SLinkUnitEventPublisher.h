@@ -20,6 +20,7 @@ public:
   void discReady(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) override;
   void discLoaded(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) override;
   void loadingDisc(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) override;
+  void noDisc(const SLinkDiscInfo& disc, const SLinkDebugInfo* debug) override;
   void changingTrack(const SLinkDiscInfo& disc,
                      const SLinkTrackInfo& track,
                      const SLinkDebugInfo* debug) override;

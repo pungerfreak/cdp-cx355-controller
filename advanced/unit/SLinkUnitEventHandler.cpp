@@ -118,6 +118,13 @@ void SLinkDispatcher::dispatch(const SLinkMessage& msg,
     iface.loadingDisc(makeDiscInfo(msg), debug);
     return;
   }
+  if (nameIs(msg.name, "NO_DISC")) {
+    SLinkDiscInfo disc = makeDiscInfo(msg);
+    // NO_DISC carries the disc number in raw/decoded; mark present=false so consumers treat it as empty.
+    disc.present = false;
+    iface.noDisc(disc, debug);
+    return;
+  }
   if (nameIs(msg.name, "CHANGING_TRACK")) {
     iface.changingTrack(makeDiscInfo(msg), makeTrackInfo(msg), debug);
     return;

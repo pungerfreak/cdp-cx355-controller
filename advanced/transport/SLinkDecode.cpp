@@ -18,6 +18,7 @@ const SLinkPattern kPatterns[] = {
   {"READY",         "cmd", 2, 0, 2, {0x00, 0x08}, {0x00, 0xFF}},
   {"CHANGING_TRACK", "cmd", 6, 0, 2, {0x00, 0x50}, {0x00, 0xFF}},
   {"DISC_READY",    "cmd", 3, 0, 2, {0x00, 0x52}, {0x00, 0xFF}},
+  {"NO_DISC",       "cmd", 2, 2, 2, {0x98, 0x05}, {0xFF, 0xFF}},
   {"LOADING_DISC",  "cmd", 3, 0, 2, {0x00, 0x54}, {0x00, 0xFF}},
   {"DISC_LOADED",   "cmd", 3, 0, 2, {0x00, 0x58}, {0x00, 0xFF}},
   {"CURRENT_DISC_BANK_B", "cmd", 2, 0, 2, {0x00, 0x15}, {0x00, 0xFF}},
@@ -32,7 +33,7 @@ const SLinkPattern kPatterns[] = {
 constexpr uint16_t kPatternCount = sizeof(kPatterns) / sizeof(kPatterns[0]);
 
 bool isDiscCommand(uint8_t cmd) {
-  return (cmd == 0x50 || cmd == 0x52 || cmd == 0x54 || cmd == 0x58 || cmd == 0x60 || cmd == 0x62);
+  return (cmd == 0x50 || cmd == 0x52 || cmd == 0x05 || cmd == 0x54 || cmd == 0x58 || cmd == 0x60 || cmd == 0x62);
 }
 
 bool isDiscTrackCommand(uint8_t cmd) {

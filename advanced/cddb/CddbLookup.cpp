@@ -130,6 +130,15 @@ void CddbLookup::onUnitEvent(const SLinkUnitEvent& e) {
         handleTrackEvent_(e.track);
       }
       break;
+    case SLinkUnitEventType::Ready:
+      // treat as a READY with no disc info; collection logic already watches readySeen_
+      readySeen_ = true;
+      readySeenMs_ = millis();
+      break;
+    case SLinkUnitEventType::LoadingDisc:
+    case SLinkUnitEventType::NoDisc:
+      // Ignore for lookup; the indexer handles no-disc progression.
+      break;
     case SLinkUnitEventType::TrackChanged:
       handleTrackEvent_(e.track);
       break;

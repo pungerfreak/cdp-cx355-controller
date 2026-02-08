@@ -59,6 +59,9 @@ void UiAdapter::onUnitEvent(const SLinkUnitEvent& e)
 {
     switch (e.type) {
         case SLinkUnitEventType::DiscChanged:
+        case SLinkUnitEventType::Ready:
+        case SLinkUnitEventType::LoadingDisc:
+        case SLinkUnitEventType::NoDisc:
         case SLinkUnitEventType::TrackChanged:
         case SLinkUnitEventType::CurrentDiscInfo:
         case SLinkUnitEventType::Status:

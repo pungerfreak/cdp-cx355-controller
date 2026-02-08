@@ -2,6 +2,7 @@
 #define CDDB_INDEXER_H_
 #include <Arduino.h>
 #include "system/SLinkSystem.h"
+#include "unit/SLinkUnitEvents.h"
 #include "command/SLinkCommandIntentSource.h"
 #include "cddb/CddbLookup.h"
 #include "cddb/CddbClient.h"
@@ -19,7 +20,7 @@ struct CddbIndexStatus {
   const char* stage = "";
 };
 
-class CddbIndexer {
+class CddbIndexer : public SLinkUnitEventObserver {
 public:
   CddbIndexer(SLinkSystem& system,
               CddbLookup& lookup,
@@ -31,6 +32,7 @@ public:
   void abort();
   void tick(uint32_t nowMs);
   CddbIndexStatus status() const;
+  void onUnitEvent(const SLinkUnitEvent& event) override;
 
 private:
   enum class State : uint8_t {
@@ -71,6 +73,10 @@ private:
   bool discReady_ = false;
   bool missing_[301] = {};
   uint16_t missingCount_ = 0;
+  uint16_t discAtStageStart_ = 0;
+  bool waitSawLoading_ = false;
+  bool waitReady_ = false;
+  uint32_t lastChangeMs_ = 0;
 };
 
 #endif  // CDDB_INDEXER_H_

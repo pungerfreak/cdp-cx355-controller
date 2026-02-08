@@ -82,7 +82,7 @@ void SLinkUnitEventPublisher::changeTrack(const SLinkDiscInfo& disc,
 }
 
 void SLinkUnitEventPublisher::ready(const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::DiscChanged,
+  publish(SLinkUnitEventType::Ready,
           emptyDisc(),
           emptyTrack(),
           SLinkTransportState::Unchanged,
@@ -117,7 +117,16 @@ void SLinkUnitEventPublisher::discLoaded(const SLinkDiscInfo& disc,
 
 void SLinkUnitEventPublisher::loadingDisc(const SLinkDiscInfo& disc,
                                           const SLinkDebugInfo* debug) {
-  publish(SLinkUnitEventType::DiscChanged,
+  publish(SLinkUnitEventType::LoadingDisc,
+          disc,
+          emptyTrack(),
+          SLinkTransportState::Unchanged,
+          debug);
+}
+
+void SLinkUnitEventPublisher::noDisc(const SLinkDiscInfo& disc,
+                                     const SLinkDebugInfo* debug) {
+  publish(SLinkUnitEventType::NoDisc,
           disc,
           emptyTrack(),
           SLinkTransportState::Unchanged,

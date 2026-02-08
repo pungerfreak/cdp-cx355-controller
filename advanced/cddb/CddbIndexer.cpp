@@ -11,7 +11,9 @@ CddbIndexer::CddbIndexer(SLinkSystem& system,
       lookup_(lookup),
       client_(client),
       storage_(storage),
-      maxDiscs_(maxDiscs) {}
+      maxDiscs_(maxDiscs) {
+  system_.addUnitObserver(*this);
+}
 
 void CddbIndexer::start() {
   if (state_ != State::Idle && state_ != State::Done && state_ != State::Failed) return;
@@ -25,6 +27,10 @@ void CddbIndexer::start() {
   unitsTotal_ = static_cast<uint32_t>(maxDiscs_) * kPlaceholderTracksPerDisc;
   memset(trackCounts_, 0, sizeof(trackCounts_));
   discReady_ = false;
+  discAtStageStart_ = disc_;
+  waitSawLoading_ = false;
+  waitReady_ = false;
+  stageStartedMs_ = millis();
   advanceState_(State::Stopping);
 }
 
@@ -36,28 +42,6 @@ void CddbIndexer::abort() {
 
 void CddbIndexer::tick(uint32_t nowMs) {
   lookup_.tick(nowMs);
-  if (state_ != State::Idle && state_ != State::Done && state_ != State::Failed) {
-    const uint32_t elapsed = nowMs - stageStartedMs_;
-    uint32_t limit = 10000;
-    switch (state_) {
-      case State::Stopping:
-      case State::WaitDiscReady:
-        limit = 15000;
-        break;
-      case State::Collecting:
-        limit = 30000;
-        break;
-      case State::Querying:
-        limit = 20000;
-        break;
-      default:
-        break;
-    }
-    if (elapsed > limit) {
-      advanceState_(State::Failed);
-      return;
-    }
-  }
   switch (state_) {
     case State::Idle:
     case State::Done:
@@ -86,10 +70,8 @@ void CddbIndexer::tick(uint32_t nowMs) {
         if (storage_.has(disc_)) {
           uint8_t storedCount = 0;
           if (storage_.trackCount(disc_, storedCount) && storedCount > 0) {
+            // Use stored count as a hint but still rescan the disc.
             setTrackCount_(disc_, storedCount);
-            unitsDone_ += trackCounts_[disc_] ? trackCounts_[disc_] : kPlaceholderTracksPerDisc;
-            ++disc_;
-            continue;
           } else {
             // Corrupt or unreadable entry; re-index it.
             storage_.remove(disc_);
@@ -102,7 +84,13 @@ void CddbIndexer::tick(uint32_t nowMs) {
         advanceState_(State::Done);
         return;
       }
+      // Throttle changeDisc commands slightly to avoid overrunning the bus.
+      const uint32_t now = millis();
+      if ((int32_t)(now - lastChangeMs_) < 120) {
+        return;
+      }
       if (intents_.changeDisc(disc_)) {
+        lastChangeMs_ = now;
         advanceState_(State::WaitDiscReady);
       } else {
         // If the intent is rejected, treat slot as missing and continue.
@@ -120,8 +108,12 @@ void CddbIndexer::tick(uint32_t nowMs) {
           discInfo.valid && discInfo.disc == disc_ && trackCounts_[disc_] == 0) {
         setTrackCount_(disc_, discInfo.trackCount);
       }
-      if ((discInfo.present && discInfo.valid && discInfo.disc == disc_) ||
-          (millis() - stageStartedMs_) > 2000) {
+      const bool discSnapshotReady = discInfo.present && discInfo.valid && discInfo.disc == disc_;
+      if (discSnapshotReady && !waitReady_) {
+        waitReady_ = true;
+        discReady_ = true;
+      }
+      if (waitReady_) {
         if (lookup_.lookup(disc_)) {
           advanceState_(State::Collecting);
         } else {
@@ -131,12 +123,6 @@ void CddbIndexer::tick(uint32_t nowMs) {
             advanceState_(State::Failed);
           }
         }
-      } else if (discInfo.present && discInfo.valid && discInfo.disc > disc_) {
-        // Changer skipped some empty slots: mark the gap as missing.
-        markMissingRange_(disc_, discInfo.disc);
-        disc_ = discInfo.disc;
-        // Give the new target a fresh try immediately.
-        advanceState_(State::WaitDiscReady);
       }
       break;
     }
@@ -153,7 +139,9 @@ CddbIndexStatus CddbIndexer::status() const {
   CddbIndexStatus s{};
   s.active = (state_ != State::Idle && state_ != State::Done && state_ != State::Failed);
   s.complete = (state_ == State::Done);
-  s.currentDisc = disc_;
+  // Report the disc that belonged to the current stage when it began, so UI labels
+  // don't flash forward when the changer skips missing slots mid-stage.
+  s.currentDisc = discAtStageStart_ ? discAtStageStart_ : disc_;
   s.currentTrack = lookup_.requestedTrack();
   s.totalDiscs = maxDiscs_ - missingCount_;
   uint32_t doneUnits = unitsDone_;
@@ -205,6 +193,18 @@ CddbIndexStatus CddbIndexer::status() const {
 void CddbIndexer::advanceState_(State next) {
   state_ = next;
   stageStartedMs_ = millis();
+  discAtStageStart_ = disc_;
+  if (state_ == State::WaitDiscReady) {
+    waitSawLoading_ = false;
+    waitReady_ = false;
+    discReady_ = false;
+  }
+  if (state_ == State::ChangeDisc) {
+    discReady_ = false;
+  }
+  if (state_ == State::Stopping) {
+    lastChangeMs_ = millis();
+  }
   switch (state_) {
     case State::Stopping:
       break;
@@ -252,10 +252,57 @@ void CddbIndexer::handleCollecting_(uint32_t nowMs) {
   uint8_t seen = lookup_.tracksSeen();
   if (seen != lastTracksSeen_) {
     lastTracksSeen_ = seen;
-    stageStartedMs_ = nowMs;
     if (seen > 0) {
       discReady_ = true;
     }
+  }
+}
+
+void CddbIndexer::onUnitEvent(const SLinkUnitEvent& event) {
+  // Ignore bus traffic unless the indexer is actively stepping discs.
+  if (state_ == State::Idle || state_ == State::Done || state_ == State::Failed) return;
+  switch (event.type) {
+    case SLinkUnitEventType::NoDisc: {
+      // The changer explicitly reports the requested disc slot is empty.
+      // Disc number is encoded in event.disc even though present=false.
+      if (state_ == State::WaitDiscReady) {
+        if (event.disc.valid && event.disc.disc >= disc_) {
+          markMissingRange_(disc_, event.disc.disc + 1);
+          disc_ = event.disc.disc + 1;
+        } else {
+          markMissing_(disc_);
+          ++disc_;
+        }
+        // Skipping a disc still counts as progress for the bar.
+        unitsDone_ += kPlaceholderTracksPerDisc;
+        advanceState_(State::ChangeDisc);
+      }
+      break;
+    }
+    case SLinkUnitEventType::LoadingDisc: {
+      if (event.disc.valid && event.disc.disc == disc_) {
+        waitSawLoading_ = true;
+      }
+      break;
+    }
+    case SLinkUnitEventType::Ready:
+    case SLinkUnitEventType::DiscChanged: {
+      if (state_ == State::WaitDiscReady) {
+        bool matchesRequested =
+            (event.disc.present && event.disc.valid && event.disc.disc == disc_);
+        if (event.type == SLinkUnitEventType::Ready && !matchesRequested) {
+          // READY with no disc info still counts if we already saw LOADING for this disc.
+          matchesRequested = waitSawLoading_;
+        }
+        if (matchesRequested) {
+          waitReady_ = true;
+          discReady_ = true;
+        }
+      }
+      break;
+    }
+    default:
+      break;
   }
 }
 
