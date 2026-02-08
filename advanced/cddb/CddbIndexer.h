@@ -77,6 +77,8 @@ private:
   bool waitSawLoading_ = false;
   bool waitReady_ = false;
   uint32_t lastChangeMs_ = 0;
+  uint32_t lastResponseMs_ = 0;
+  bool sawResponseInWait_ = false;
 };
 
 #endif  // CDDB_INDEXER_H_

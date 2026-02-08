@@ -30,6 +30,8 @@ void CddbIndexer::start() {
   discAtStageStart_ = disc_;
   waitSawLoading_ = false;
   waitReady_ = false;
+  lastResponseMs_ = millis();
+  sawResponseInWait_ = false;
   stageStartedMs_ = millis();
   advanceState_(State::Stopping);
 }
@@ -86,11 +88,12 @@ void CddbIndexer::tick(uint32_t nowMs) {
       }
       // Throttle changeDisc commands slightly to avoid overrunning the bus.
       const uint32_t now = millis();
-      if ((int32_t)(now - lastChangeMs_) < 120) {
+      if ((int32_t)(now - lastChangeMs_) < 200) {
         return;
       }
       if (intents_.changeDisc(disc_)) {
         lastChangeMs_ = now;
+        lastResponseMs_ = now;
         advanceState_(State::WaitDiscReady);
       } else {
         // If the intent is rejected, treat slot as missing and continue.
@@ -124,6 +127,18 @@ void CddbIndexer::tick(uint32_t nowMs) {
           }
         }
       }
+      // If we haven't seen a response within ~1s, resend CHANGE_DISC.
+      else if (!sawResponseInWait_ && (int32_t)(nowMs - lastResponseMs_) >= 1000) {
+        if (intents_.changeDisc(disc_)) {
+          lastChangeMs_ = nowMs;
+          lastResponseMs_ = nowMs;
+        } else {
+          // Treat a rejected intent as a missing slot and continue.
+          markMissing_(disc_);
+          ++disc_;
+          advanceState_(State::ChangeDisc);
+        }
+      }
       break;
     }
     case State::Collecting:
@@ -143,7 +158,8 @@ CddbIndexStatus CddbIndexer::status() const {
   // don't flash forward when the changer skips missing slots mid-stage.
   s.currentDisc = discAtStageStart_ ? discAtStageStart_ : disc_;
   s.currentTrack = lookup_.requestedTrack();
-  s.totalDiscs = maxDiscs_ - missingCount_;
+  // Keep the displayed total fixed at the configured max (300), even if slots are missing.
+  s.totalDiscs = maxDiscs_;
   uint32_t doneUnits = unitsDone_;
   uint32_t totalUnits = unitsDone_;
   uint8_t seen = (state_ == State::Collecting || state_ == State::Querying) ? lookup_.tracksSeen() : 0;
@@ -198,6 +214,7 @@ void CddbIndexer::advanceState_(State next) {
     waitSawLoading_ = false;
     waitReady_ = false;
     discReady_ = false;
+    sawResponseInWait_ = false;
   }
   if (state_ == State::ChangeDisc) {
     discReady_ = false;
@@ -277,12 +294,15 @@ void CddbIndexer::onUnitEvent(const SLinkUnitEvent& event) {
         unitsDone_ += kPlaceholderTracksPerDisc;
         advanceState_(State::ChangeDisc);
       }
+      lastResponseMs_ = millis();
       break;
     }
     case SLinkUnitEventType::LoadingDisc: {
       if (event.disc.valid && event.disc.disc == disc_) {
         waitSawLoading_ = true;
       }
+      sawResponseInWait_ = true;
+      lastResponseMs_ = millis();
       break;
     }
     case SLinkUnitEventType::Ready:
@@ -299,6 +319,8 @@ void CddbIndexer::onUnitEvent(const SLinkUnitEvent& event) {
           discReady_ = true;
         }
       }
+      sawResponseInWait_ = true;
+      lastResponseMs_ = millis();
       break;
     }
     default:
@@ -321,6 +343,9 @@ void CddbIndexer::handleQuerying_() {
     disc_++;
     currentSaved_ = false;
     attempt_ = 0;
+    // Stop playback after finishing a disc before moving to the next one.
+    intents_.stop();
+    lastChangeMs_ = millis();
     advanceState_(State::ChangeDisc);
     return;
   }
@@ -338,6 +363,9 @@ void CddbIndexer::handleQuerying_() {
   }
   disc_++;
   currentSaved_ = false;
+  // Stop playback after finishing a disc before moving to the next one.
+  intents_.stop();
+  lastChangeMs_ = millis();
   advanceState_(State::ChangeDisc);
 }
 
