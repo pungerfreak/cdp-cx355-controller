@@ -71,14 +71,14 @@ void CddbIndexer::tick(uint32_t nowMs) {
         }
         if (storage_.has(disc_)) {
           uint8_t storedCount = 0;
-          if (storage_.trackCount(disc_, storedCount) && storedCount > 0) {
-            // Use stored count as a hint but still rescan the disc.
-            setTrackCount_(disc_, storedCount);
-          } else {
-            // Corrupt or unreadable entry; re-index it.
-            storage_.remove(disc_);
-            setTrackCount_(disc_, 0);
+          if (!storage_.trackCount(disc_, storedCount) || storedCount == 0) {
+            storedCount = kPlaceholderTracksPerDisc;
           }
+          // Count it done and move on without re-indexing.
+          setTrackCount_(disc_, storedCount);
+          unitsDone_ += storedCount;
+          ++disc_;
+          continue;
         }
         break;
       }
