@@ -11,6 +11,7 @@ public:
   bool begin();
   bool save(uint16_t disc, const CddbMetadata& meta, const CddbLookup::Result& lookup);
   bool has(uint16_t disc) const;
+  bool load(uint16_t disc, CddbMetadata& out) const;
   bool trackCount(uint16_t disc, uint8_t& outCount) const;
   bool remove(uint16_t disc);
   bool clearAll(uint16_t* deletedCount = nullptr);

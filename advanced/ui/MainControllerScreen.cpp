@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <lvgl.h>
+#include "ScrollingLabel.h"
 extern const lv_font_t open_sans_18;
 extern const lv_font_t open_sans_18_bold;
 #include "../images/power.c"
@@ -138,25 +139,12 @@ void MainControllerScreen::init(lv_obj_t* parent, UiActionCb cb, void* user)
         LV_FLEX_ALIGN_CENTER   // align-items
     );
 
-    static lv_style_t mid_label_style_base;
-    lv_style_init(&mid_label_style_base);
-    lv_style_set_text_align(&mid_label_style_base, LV_TEXT_ALIGN_CENTER);
-    lv_style_set_text_color(&mid_label_style_base, color_txt);
-
-    midLine1_ = lv_label_create(midContainer);
-    lv_label_set_text(midLine1_, "ARTIST");
-    lv_obj_add_style(midLine1_, &mid_label_style_base, 0);
-    lv_obj_add_style(midLine1_, &style_font_bold, 0);
-
-    midLine2_ = lv_label_create(midContainer);
-    lv_label_set_text(midLine2_, "Album");
-    lv_obj_add_style(midLine2_, &mid_label_style_base, 0);
-    lv_obj_add_style(midLine2_, &style_font_normal, 0);
-
-    midLine3_ = lv_label_create(midContainer);
-    lv_label_set_text(midLine3_, "Title");
-    lv_obj_add_style(midLine3_, &mid_label_style_base, 0);
-    lv_obj_add_style(midLine3_, &style_font_normal, 0);
+    midLine1_.init(midContainer, &open_sans_18_bold, color_txt, LV_PCT(100));
+    midLine1_.setText("ARTIST");
+    midLine2_.init(midContainer, &open_sans_18, color_txt, LV_PCT(100));
+    midLine2_.setText("Album");
+    midLine3_.init(midContainer, &open_sans_18, color_txt, LV_PCT(100));
+    midLine3_.setText("Title");
 
     // // Bottom: transport buttons
     lv_obj_t* controls = lv_obj_create(root_);
@@ -232,6 +220,10 @@ void MainControllerScreen::render(const UiNowPlayingSnapshot& s)
         lv_imgbtn_set_src(playBtn_, LV_IMGBTN_STATE_RELEASED, NULL, icon, NULL);
         lv_imgbtn_set_src(playBtn_, LV_IMGBTN_STATE_PRESSED, NULL, icon, NULL);
     }
+
+    midLine1_.setText((s.artist && s.artist[0]) ? s.artist : "");
+    midLine2_.setText((s.album && s.album[0]) ? s.album : "");
+    midLine3_.setText((s.title && s.title[0]) ? s.title : "");
 
     last_ = s;
     hasLast_ = true;

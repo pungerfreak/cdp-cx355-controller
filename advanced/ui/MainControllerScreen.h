@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include "UiTypes.h"
+#include "ScrollingLabel.h"
 
 class MainControllerScreen {
   public:
@@ -25,9 +26,9 @@ class MainControllerScreen {
     lv_obj_t* topRowDiscLabel_ = nullptr;
     lv_obj_t* topRowTrack_ = nullptr;
     lv_obj_t* topRowTrackLabel_ = nullptr;
-    lv_obj_t* midLine1_ = nullptr;
-    lv_obj_t* midLine2_ = nullptr;
-    lv_obj_t* midLine3_ = nullptr;
+    ScrollingLabel midLine1_;
+    ScrollingLabel midLine2_;
+    ScrollingLabel midLine3_;
     lv_obj_t* prevBtn_ = nullptr;
     lv_obj_t* nextBtn_ = nullptr;
     lv_obj_t* playBtn_ = nullptr;

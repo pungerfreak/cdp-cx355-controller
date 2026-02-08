@@ -32,6 +32,7 @@
 #include "ui/UiTypes.h"
 #include "ui/UiApp.cpp"
 #include "ui/UiAdapter.cpp"
+#include "ui/ScrollingLabel.cpp"
 #include "ui/LoadingScreen.cpp"
 #include "cddb/CddbClient.cpp"
 #include "cddb/CddbStorage.cpp"

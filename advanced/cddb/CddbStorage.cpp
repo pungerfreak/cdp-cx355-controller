@@ -59,6 +59,64 @@ bool CddbStorage::save(uint16_t disc, const CddbMetadata& meta, const CddbLookup
   return true;
 }
 
+static bool extractStringField(const String& body, const char* key, String& out) {
+  String needle = "\"";
+  needle += key;
+  needle += "\":\"";
+  int start = body.indexOf(needle);
+  if (start < 0) return false;
+  start += needle.length();
+  int end = body.indexOf('\"', start);
+  if (end < 0) return false;
+  out = body.substring(start, end);
+  return true;
+}
+
+static size_t extractTracksArray(const String& body, String* tracks, size_t maxTracks) {
+  const String needle = "\"tracks\":[";
+  int start = body.indexOf(needle);
+  if (start < 0) return 0;
+  start += needle.length();
+  size_t count = 0;
+  bool inStr = false;
+  String cur;
+  for (int i = start; i < body.length() && count < maxTracks; ++i) {
+    char c = body[i];
+    if (c == '\"') {
+      if (!inStr) {
+        inStr = true;
+        cur = "";
+      } else {
+        tracks[count++] = cur;
+        inStr = false;
+      }
+    } else if (inStr) {
+      cur += c;
+    } else if (c == ']') {
+      break;
+    }
+  }
+  return count;
+}
+
+bool CddbStorage::load(uint16_t disc, CddbMetadata& out) const {
+  out = {};
+  if (!mounted_) return false;
+  String p = path_(disc);
+  File f = SPIFFS.open(p, FILE_READ);
+  if (!f) return false;
+  String body;
+  while (f.available()) {
+    body += (char)f.read();
+  }
+  f.close();
+
+  extractStringField(body, "artist", out.artist);
+  extractStringField(body, "title", out.title);
+  out.trackCount = extractTracksArray(body, out.tracks, CddbMetadata::kMaxTracks);
+  return true;
+}
+
 bool CddbStorage::remove(uint16_t disc) {
   if (!mounted_) return false;
   String p = path_(disc);

@@ -2,6 +2,7 @@
 
 #include "UiApp.h"
 #include "cddb/CddbIndexer.h"
+#include "cddb/CddbStorage.h"
 #include "ui/LoadingScreen.h"
 
 #include <string.h>
@@ -124,6 +125,27 @@ void UiAdapter::refreshFromSnapshot_()
             next.transport = UiTransportState::Unknown;
             break;
     }
+
+    // Populate metadata from storage if available.
+    const char* fallbackArtist = "";
+    const char* fallbackAlbum = "";
+    const char* fallbackTitle = "";
+    artist_ = "";
+    album_ = "";
+    title_ = "";
+    if (storage_ && next.disc > 0 && storage_->has(next.disc)) {
+        CddbMetadata meta;
+        if (storage_->load(next.disc, meta)) {
+            artist_ = meta.artist;
+            album_ = meta.title;
+            if (next.track > 0 && next.track <= meta.trackCount) {
+                title_ = meta.tracks[next.track - 1];
+            }
+        }
+    }
+    next.artist = artist_.length() ? artist_.c_str() : fallbackArtist;
+    next.album = album_.length() ? album_.c_str() : fallbackAlbum;
+    next.title = title_.length() ? title_.c_str() : fallbackTitle;
 
     bool changed = !hasUi_;
     if (!changed) {

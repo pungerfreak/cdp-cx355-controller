@@ -85,6 +85,7 @@ void setup() {
   cddbLookup.start();
   app.init();
   adapter.setIndexer(&cddbIndexer, &loadingScreen);
+  adapter.setStorage(&cddbStorage);
   consoleAdapter.start();
   adapter.start();
   // Push whatever state we have cached, then ask the unit for fresh status so the UI syncs at boot.

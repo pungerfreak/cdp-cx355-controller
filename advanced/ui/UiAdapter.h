@@ -2,6 +2,7 @@
 
 #include "UiApp.h"
 #include "../system/SLinkSystem.h"
+#include "cddb/CddbStorage.h"
 
 class CddbIndexer;
 class LoadingScreen;
@@ -17,6 +18,7 @@ public:
     void stop();
     void requestStatus();
     void setIndexer(class CddbIndexer* indexer, class LoadingScreen* loading);
+    void setStorage(CddbStorage* storage) { storage_ = storage; }
 
     // SLinkUnitEventObserver
     void onUnitEvent(const SLinkUnitEvent& e) override;
@@ -56,4 +58,9 @@ private:
     uint8_t discEntryLen_ = 0;
     CddbIndexer* indexer_ = nullptr;
     LoadingScreen* loading_ = nullptr;
+    CddbStorage* storage_ = nullptr;
+
+    String artist_;
+    String album_;
+    String title_;
 };
